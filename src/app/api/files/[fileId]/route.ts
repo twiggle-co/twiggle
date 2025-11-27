@@ -17,11 +17,22 @@ function getStorage() {
 
   if (process.env.GCS_KEY_FILENAME) {
     config.keyFilename = process.env.GCS_KEY_FILENAME
+    console.log("Using GCS_KEY_FILENAME for authentication")
   } else if (process.env.GCS_CREDENTIALS) {
     try {
-      config.credentials = JSON.parse(process.env.GCS_CREDENTIALS)
+      const credentialsString = process.env.GCS_CREDENTIALS
+      config.credentials = JSON.parse(credentialsString)
+      console.log("Successfully parsed GCS_CREDENTIALS")
+      
+      // Validate that credentials have required fields
+      const creds = config.credentials as any
+      if (!creds.type || !creds.project_id || !creds.private_key || !creds.client_email) {
+        console.error("GCS_CREDENTIALS is missing required fields")
+        throw new Error("GCS_CREDENTIALS is missing required fields")
+      }
     } catch (error) {
       console.error("Error parsing GCS_CREDENTIALS:", error)
+      throw new Error(`Failed to parse GCS_CREDENTIALS: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   } else {
     // Fallback: Try to use local key file for development
@@ -55,6 +66,19 @@ function getStorage() {
         console.warn("Could not read project ID from key file:", error instanceof Error ? error.message : "Unknown error")
       }
     }
+    
+    // Try to get project ID from credentials if available
+    if (!config.projectId && config.credentials) {
+      const creds = config.credentials as any
+      config.projectId = creds.project_id
+    }
+  }
+
+  // Validate that we have some form of authentication
+  if (!config.keyFilename && !config.credentials) {
+    const errorMsg = "No Google Cloud Storage credentials found. Please set GCS_CREDENTIALS or GCS_KEY_FILENAME environment variable."
+    console.error(errorMsg)
+    throw new Error(errorMsg)
   }
 
   return new Storage(config)

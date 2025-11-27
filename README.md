@@ -95,10 +95,36 @@ This application uses Google Cloud Storage to temporarily store uploaded files. 
 
    **For Production (Vercel/Serverless):**
    - Use Option 2 with `GCS_CREDENTIALS` environment variable
-   - Add the environment variables in your deployment platform's settings
+   - **Setting up in Vercel:**
+     1. Go to your Vercel project dashboard
+     2. Navigate to **Settings** > **Environment Variables**
+     3. Add the following variables:
+        - `GCS_PROJECT_ID`: Your Google Cloud project ID (e.g., `twiggle-479508`)
+        - `GCS_CREDENTIALS`: The entire JSON content of your service account key file as a single-line string
+        - `GCS_BUCKET_NAME`: Your bucket name (e.g., `twiggle-files`)
+     4. **Important for GCS_CREDENTIALS:**
+        - Copy the entire JSON from your service account key file
+        - Paste it as a single-line string (remove all line breaks)
+        - Or use a JSON minifier to convert it to one line
+        - Example format: `{"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}`
+     5. Make sure to set these for **Production**, **Preview**, and **Development** environments as needed
+     6. **Redeploy** your application after adding environment variables
    - Never commit the credentials file to git (it's already in `.gitignore`)
 
 4. **Troubleshooting Errors:**
+   
+   **If uploads don't work on Vercel:**
+   - Check Vercel function logs for detailed error messages
+   - Verify all environment variables are set correctly:
+     - `GCS_PROJECT_ID` should be your project ID
+     - `GCS_CREDENTIALS` should be the entire JSON as a single-line string
+     - `GCS_BUCKET_NAME` should match your bucket name
+   - **Common issues:**
+     - `GCS_CREDENTIALS` must be a valid JSON string (single line, no line breaks)
+     - Make sure you copied the entire JSON from your service account key file
+     - Environment variables are case-sensitive
+     - After adding/changing environment variables, you must **redeploy** your application
+   - Check the Vercel function logs - the code now includes detailed logging to help diagnose issues
    
    **If you see a `403 Permission denied` error:**
    - Ensure the service account has the correct IAM role:

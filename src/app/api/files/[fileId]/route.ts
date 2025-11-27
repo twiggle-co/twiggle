@@ -53,7 +53,7 @@ function getStorage() {
 
 const storage = getStorage()
 
-const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files" || "twiggle-files"
+const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
 
 export async function GET(
   request: NextRequest,
@@ -95,8 +95,14 @@ export async function GET(
     // Determine content type
     const contentType = metadata.contentType || "application/octet-stream"
 
+    // Convert Buffer to ArrayBuffer for NextResponse compatibility
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    )
+
     // Return file with appropriate headers
-    return new NextResponse(buffer, {
+    return new NextResponse(arrayBuffer, {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${originalName}"`,

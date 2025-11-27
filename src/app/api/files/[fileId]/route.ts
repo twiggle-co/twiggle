@@ -25,25 +25,34 @@ function getStorage() {
     }
   } else {
     // Fallback: Try to use local key file for development
-    const localKeyPath = path.join(process.cwd(), "key", "twiggle-479508-98239b893140.json")
-    if (fs.existsSync(localKeyPath)) {
-      config.keyFilename = localKeyPath
-      console.log("Using local key file for Google Cloud Storage authentication")
-    } else {
-      console.warn(
-        "No GCS credentials configured. Set GCS_KEY_FILENAME, GCS_CREDENTIALS, or place key file at key/twiggle-479508-98239b893140.json"
-      )
+    // Only check for file in development (not on Vercel/build time)
+    try {
+      const localKeyPath = path.join(process.cwd(), "key", "twiggle-479508-98239b893140.json")
+      if (fs.existsSync(localKeyPath)) {
+        config.keyFilename = localKeyPath
+        console.log("Using local key file for Google Cloud Storage authentication")
+      } else {
+        console.warn(
+          "No GCS credentials configured. Set GCS_KEY_FILENAME, GCS_CREDENTIALS, or place key file at key/twiggle-479508-98239b893140.json"
+        )
+      }
+    } catch (error) {
+      // File system operations may fail in serverless environments
+      console.warn("Could not check for local key file:", error instanceof Error ? error.message : "Unknown error")
     }
   }
 
   if (!config.projectId) {
     // Try to get project ID from key file if available
-    if (config.keyFilename && fs.existsSync(config.keyFilename)) {
+    if (config.keyFilename) {
       try {
-        const keyData = JSON.parse(fs.readFileSync(config.keyFilename, "utf8"))
-        config.projectId = keyData.project_id || config.projectId
+        if (fs.existsSync(config.keyFilename)) {
+          const keyData = JSON.parse(fs.readFileSync(config.keyFilename, "utf8"))
+          config.projectId = keyData.project_id || config.projectId
+        }
       } catch (error) {
-        console.error("Error reading project ID from key file:", error)
+        // Silently fail - project ID may be set via environment variable
+        console.warn("Could not read project ID from key file:", error instanceof Error ? error.message : "Unknown error")
       }
     }
   }
@@ -51,7 +60,14 @@ function getStorage() {
   return new Storage(config)
 }
 
-const storage = getStorage()
+// Lazy initialization to avoid build-time errors on Vercel
+let storage: Storage | null = null
+function getStorageInstance(): Storage {
+  if (!storage) {
+    storage = getStorage()
+  }
+  return storage
+}
 
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
 
@@ -68,7 +84,8 @@ export async function GET(
 
     // Get file from bucket
     // Files are stored as {fileId}.{extension}
-    const bucket = storage.bucket(BUCKET_NAME)
+    const storageInstance = getStorageInstance()
+    const bucket = storageInstance.bucket(BUCKET_NAME)
     
     // Try to find the file by listing files with the prefix
     const [files] = await bucket.getFiles({ prefix: fileId })
@@ -95,14 +112,12 @@ export async function GET(
     // Determine content type
     const contentType = metadata.contentType || "application/octet-stream"
 
-    // Convert Buffer to ArrayBuffer for NextResponse compatibility
-    const arrayBuffer = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    )
+    // Convert Buffer to Uint8Array for NextResponse compatibility
+    // This ensures we have a proper ArrayBuffer-like type that NextResponse accepts
+    const uint8Array = new Uint8Array(buffer)
 
     // Return file with appropriate headers
-    return new NextResponse(arrayBuffer, {
+    return new NextResponse(uint8Array, {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${originalName}"`,

@@ -26,25 +26,34 @@ function getStorage() {
     }
   } else {
     // Fallback: Try to use local key file for development
-    const localKeyPath = path.join(process.cwd(), "key", "twiggle-479508-98239b893140.json")
-    if (fs.existsSync(localKeyPath)) {
-      config.keyFilename = localKeyPath
-      console.log("Using local key file for Google Cloud Storage authentication")
-    } else {
-      console.warn(
-        "No GCS credentials configured. Set GCS_KEY_FILENAME, GCS_CREDENTIALS, or place key file at key/twiggle-479508-98239b893140.json"
-      )
+    // Only check for file in development (not on Vercel/build time)
+    try {
+      const localKeyPath = path.join(process.cwd(), "key", "twiggle-479508-98239b893140.json")
+      if (fs.existsSync(localKeyPath)) {
+        config.keyFilename = localKeyPath
+        console.log("Using local key file for Google Cloud Storage authentication")
+      } else {
+        console.warn(
+          "No GCS credentials configured. Set GCS_KEY_FILENAME, GCS_CREDENTIALS, or place key file at key/twiggle-479508-98239b893140.json"
+        )
+      }
+    } catch (error) {
+      // File system operations may fail in serverless environments
+      console.warn("Could not check for local key file:", error instanceof Error ? error.message : "Unknown error")
     }
   }
 
   if (!config.projectId) {
     // Try to get project ID from key file if available
-    if (config.keyFilename && fs.existsSync(config.keyFilename)) {
+    if (config.keyFilename) {
       try {
-        const keyData = JSON.parse(fs.readFileSync(config.keyFilename, "utf8"))
-        config.projectId = keyData.project_id || config.projectId
+        if (fs.existsSync(config.keyFilename)) {
+          const keyData = JSON.parse(fs.readFileSync(config.keyFilename, "utf8"))
+          config.projectId = keyData.project_id || config.projectId
+        }
       } catch (error) {
-        console.error("Error reading project ID from key file:", error)
+        // Silently fail - project ID may be set via environment variable
+        console.warn("Could not read project ID from key file:", error instanceof Error ? error.message : "Unknown error")
       }
     }
   }
@@ -52,7 +61,14 @@ function getStorage() {
   return new Storage(config)
 }
 
-const storage = getStorage()
+// Lazy initialization to avoid build-time errors on Vercel
+let storage: Storage | null = null
+function getStorageInstance(): Storage {
+  if (!storage) {
+    storage = getStorage()
+  }
+  return storage
+}
 
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
 
@@ -75,7 +91,8 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer)
 
     // Upload to Google Cloud Storage
-    const bucket = storage.bucket(BUCKET_NAME)
+    const storageInstance = getStorageInstance()
+    const bucket = storageInstance.bucket(BUCKET_NAME)
     const fileUpload = bucket.file(fileName)
 
     await fileUpload.save(buffer, {

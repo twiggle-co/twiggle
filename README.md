@@ -40,29 +40,83 @@ This application uses Google Cloud Storage to temporarily store uploaded files. 
    - Go to [Google Cloud Console](https://console.cloud.google.com/storage)
    - Create a new bucket (e.g., `twiggle-files`)
    - Note the bucket name
+   - **Bucket Access Settings:**
+     - If **Uniform bucket-level access** is enabled (recommended for security):
+       - Files will be accessed via signed URLs (valid for 7 days)
+       - No additional configuration needed
+     - If you want public access:
+       - Disable uniform bucket-level access, OR
+       - Make the entire bucket public at the bucket level
+       - Files will be accessible via public URLs
 
-2. **Create a Service Account:**
+2. **Create a Service Account and Grant Permissions:**
    - Go to [IAM & Admin > Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts)
-   - Create a new service account
-   - Grant it "Storage Object Admin" role for the bucket
-   - Create a JSON key and download it
+   - Create a new service account (or use an existing one)
+   - **Grant IAM Permissions:**
+     - Click on the service account name
+     - Go to the "Permissions" tab
+     - Click "Grant Access"
+     - Add one of these roles:
+       - **Storage Object Admin** (recommended for bucket-level access)
+       - **Storage Admin** (full project-level access)
+     - For bucket-level access only:
+       - In the "Condition" section, you can restrict to a specific bucket
+       - Or grant the role at the bucket level:
+         1. Go to [Cloud Storage > Buckets](https://console.cloud.google.com/storage/browser)
+         2. Click on your bucket name
+         3. Go to the "Permissions" tab
+         4. Click "Grant Access"
+         5. Add your service account email
+         6. Select "Storage Object Admin" role
+   - **Create a JSON Key:**
+     - Go back to the service account details
+     - Click the "Keys" tab
+     - Click "Add Key" > "Create new key"
+     - Select "JSON" format
+     - Download the key file (keep it secure!)
 
 3. **Configure Environment Variables:**
-   Create a `.env.local` file in the root directory with:
+   
+   **For Local Development:**
+   - The app will automatically use the key file at `key/twiggle-479508-98239b893140.json` if no environment variables are set
+   - Or create a `.env.local` file in the root directory with:
 
    ```env
-   # Option 1: Use service account key file
-   GCS_PROJECT_ID=your-project-id
-   GCS_KEY_FILENAME=path/to/service-account-key.json
+   # Option 1: Use service account key file path
+   GCS_PROJECT_ID=twiggle-479508
+   GCS_KEY_FILENAME=key/twiggle-479508-98239b893140.json
    GCS_BUCKET_NAME=twiggle-files
 
-   # Option 2: Use credentials from environment variable (for serverless)
-   # GCS_PROJECT_ID=your-project-id
-   # GCS_CREDENTIALS={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
+   # Option 2: Use credentials from environment variable (for serverless/Vercel)
+   # GCS_PROJECT_ID=twiggle-479508
+   # GCS_CREDENTIALS={"type":"service_account","project_id":"twiggle-479508","private_key":"...","client_email":"..."}
    # GCS_BUCKET_NAME=twiggle-files
    ```
 
-4. **Install Dependencies:**
+   **For Production (Vercel/Serverless):**
+   - Use Option 2 with `GCS_CREDENTIALS` environment variable
+   - Add the environment variables in your deployment platform's settings
+   - Never commit the credentials file to git (it's already in `.gitignore`)
+
+4. **Troubleshooting Errors:**
+   
+   **If you see a `403 Permission denied` error:**
+   - Ensure the service account has the correct IAM role:
+     - Go to [IAM & Admin > IAM](https://console.cloud.google.com/iam-admin/iam)
+     - Find your service account email (e.g., `twiggle@twiggle-479508.iam.gserviceaccount.com`)
+     - Verify it has "Storage Object Admin" or "Storage Admin" role
+   - For bucket-level permissions:
+     - Go to your bucket's permissions tab
+     - Ensure the service account is listed with "Storage Object Admin" role
+   - Wait a few minutes after granting permissions (they may take time to propagate)
+   - Verify the bucket name matches `GCS_BUCKET_NAME` environment variable
+   
+   **If you see a `400 Uniform bucket-level access` error:**
+   - This is normal! The app automatically handles this by using signed URLs instead of public URLs
+   - Signed URLs are valid for 7 days and provide secure, time-limited access to files
+   - No action needed - the upload will succeed and return a signed URL
+
+5. **Install Dependencies:**
    ```bash
    npm install
    ```

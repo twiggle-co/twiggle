@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Storage } from "@google-cloud/storage"
+import path from "path"
+import fs from "fs"
 
 // Initialize Google Cloud Storage
 // Supports both keyFilename and credentials from environment variables
+// Falls back to local key file for development if no env vars are set
 function getStorage() {
   const config: {
     projectId?: string
@@ -20,6 +23,29 @@ function getStorage() {
     } catch (error) {
       console.error("Error parsing GCS_CREDENTIALS:", error)
     }
+  } else {
+    // Fallback: Try to use local key file for development
+    const localKeyPath = path.join(process.cwd(), "key", "twiggle-479508-98239b893140.json")
+    if (fs.existsSync(localKeyPath)) {
+      config.keyFilename = localKeyPath
+      console.log("Using local key file for Google Cloud Storage authentication")
+    } else {
+      console.warn(
+        "No GCS credentials configured. Set GCS_KEY_FILENAME, GCS_CREDENTIALS, or place key file at key/twiggle-479508-98239b893140.json"
+      )
+    }
+  }
+
+  if (!config.projectId) {
+    // Try to get project ID from key file if available
+    if (config.keyFilename && fs.existsSync(config.keyFilename)) {
+      try {
+        const keyData = JSON.parse(fs.readFileSync(config.keyFilename, "utf8"))
+        config.projectId = keyData.project_id || config.projectId
+      } catch (error) {
+        console.error("Error reading project ID from key file:", error)
+      }
+    }
   }
 
   return new Storage(config)
@@ -27,7 +53,7 @@ function getStorage() {
 
 const storage = getStorage()
 
-const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
+const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files" || "twiggle-files"
 
 export async function GET(
   request: NextRequest,
@@ -77,11 +103,32 @@ export async function GET(
         "Cache-Control": "public, max-age=3600",
       },
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error retrieving file:", error)
+    
+    // Provide helpful error messages for common issues
+    let errorMessage = "Failed to retrieve file"
+    let statusCode = 500
+    
+    if (error?.code === 403 || error?.response?.status === 403) {
+      errorMessage = "Permission denied: The service account does not have the required permissions to access files from Google Cloud Storage."
+      statusCode = 403
+    } else if (error?.code === 404 || error?.response?.status === 404) {
+      errorMessage = `Bucket "${BUCKET_NAME}" not found. Please check that the bucket exists and the bucket name is correct.`
+      statusCode = 404
+    } else if (error?.message) {
+      errorMessage = error.message
+    }
+    
     return NextResponse.json(
-      { error: "Failed to retrieve file", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      {
+        error: errorMessage,
+        details: error?.response?.data || error?.message || "Unknown error",
+        hint: error?.code === 403
+          ? "Ensure the service account has 'Storage Object Viewer' or 'Storage Object Admin' role on the bucket."
+          : undefined,
+      },
+      { status: statusCode }
     )
   }
 }

@@ -13,6 +13,8 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
   const [showConfirmRemove, setShowConfirmRemove] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [fileContent, setFileContent] = useState<string>("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [isLoadingContent, setIsLoadingContent] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prevShowPreviewRef = useRef(false)
   
@@ -31,60 +33,121 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
     initializeWindow,
   } = useDraggableWindow()
 
+  // Upload file to Google Cloud Storage
+  const uploadFileToGCS = useCallback(
+    async (file: File) => {
+      setIsUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+
+        const response = await fetch("/api/files/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to upload file")
+        }
+
+        const result = await response.json()
+        return result
+      } catch (error) {
+        console.error("Error uploading file:", error)
+        throw error
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    []
+  )
+
+  // Fetch file content from Google Cloud Storage
+  const fetchFileFromGCS = useCallback(
+    async (fileId: string) => {
+      setIsLoadingContent(true)
+      try {
+        const response = await fetch(`/api/files/${fileId}`)
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch file")
+        }
+
+        const contentType = response.headers.get("content-type") || ""
+        const isTextFile = contentType.startsWith("text/") || 
+                          contentType === "application/json" ||
+                          contentType.includes("javascript") ||
+                          contentType.includes("typescript")
+
+        if (isTextFile) {
+          const text = await response.text()
+          return text
+        } else {
+          // For binary files, return a message
+          return "Preview not available for this file type. File is stored in Google Cloud Storage."
+        }
+      } catch (error) {
+        console.error("Error fetching file:", error)
+        return `Error loading file: ${error instanceof Error ? error.message : "Unknown error"}`
+      } finally {
+        setIsLoadingContent(false)
+      }
+    },
+    []
+  )
+
   const persistFile = useCallback(
-    (file: File | null) => {
+    async (file: File | null) => {
       if (!data.onFileChange) return
       if (file) {
-        // Read file content for text files
-        const isTextFile = file.type.startsWith("text/") || 
-                          file.type === "application/json" ||
-                          file.name.endsWith(".txt") ||
-                          file.name.endsWith(".md") ||
-                          file.name.endsWith(".js") ||
-                          file.name.endsWith(".ts") ||
-                          file.name.endsWith(".tsx") ||
-                          file.name.endsWith(".jsx") ||
-                          file.name.endsWith(".css") ||
-                          file.name.endsWith(".html") ||
-                          file.name.endsWith(".json")
-        
-        if (isTextFile) {
-          const reader = new FileReader()
-          reader.onload = (e) => {
-            const content = e.target?.result as string
-            setFileContent(content || "")
-            // Persist content with file metadata
-            if (data.onFileChange) {
-              data.onFileChange(id, {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                content: content || "",
-              })
-            }
+        try {
+          // Upload file to Google Cloud Storage
+          const uploadResult = await uploadFileToGCS(file)
+          
+          // Determine if this is a text file that can be previewed
+          const isTextFile = file.type.startsWith("text/") || 
+                            file.type === "application/json" ||
+                            file.name.endsWith(".txt") ||
+                            file.name.endsWith(".md") ||
+                            file.name.endsWith(".js") ||
+                            file.name.endsWith(".ts") ||
+                            file.name.endsWith(".tsx") ||
+                            file.name.endsWith(".jsx") ||
+                            file.name.endsWith(".css") ||
+                            file.name.endsWith(".html") ||
+                            file.name.endsWith(".json")
+
+          // Store file metadata with storage information
+          const fileMeta = {
+            name: uploadResult.fileName || file.name,
+            size: uploadResult.size || file.size,
+            type: uploadResult.type || file.type,
+            storageUrl: uploadResult.storageUrl,
+            fileId: uploadResult.fileId,
+            // Don't store content immediately - fetch it when preview is opened
+            content: undefined,
           }
-          reader.onerror = () => {
-            const errorMsg = "Error reading file"
-            setFileContent(errorMsg)
-            if (data.onFileChange) {
-              data.onFileChange(id, {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                content: errorMsg,
-              })
-            }
+
+          if (data.onFileChange) {
+            data.onFileChange(id, fileMeta)
           }
-          reader.readAsText(file)
-        } else {
-          const notAvailableMsg = "Preview not available for this file type"
-          setFileContent(notAvailableMsg)
+
+          // For text files, we can optionally pre-load the content
+          // But for now, we'll fetch it when preview is opened
+          if (isTextFile) {
+            setFileContent("") // Will be loaded when preview opens
+          } else {
+            setFileContent("Preview not available for this file type")
+          }
+        } catch (error) {
+          const errorMsg = `Error uploading file: ${error instanceof Error ? error.message : "Unknown error"}`
+          setFileContent(errorMsg)
           if (data.onFileChange) {
             data.onFileChange(id, {
               name: file.name,
               size: file.size,
               type: file.type,
-              content: notAvailableMsg,
+              content: errorMsg,
             })
           }
         }
@@ -94,7 +157,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
         setFileContent("")
       }
     },
-    [data, id]
+    [data, id, uploadFileToGCS]
   )
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,15 +186,35 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
     setShowConfirmRemove(false)
   }
 
-  // Load file content from fileInfo when available
+  // Load file content from fileInfo when available, or fetch from GCS when preview opens
   useEffect(() => {
-    if (fileInfo?.content !== undefined) {
-      setFileContent(fileInfo.content)
-    } else if (fileInfo && !fileInfo.content) {
-      // File exists but no content loaded yet
-      setFileContent("")
+    if (showPreview && fileInfo) {
+      // If content is already loaded, use it
+      if (fileInfo.content !== undefined) {
+        setFileContent(fileInfo.content)
+      } 
+      // If we have a fileId but no content, fetch from GCS
+      else if (fileInfo.fileId && !fileInfo.content) {
+        fetchFileFromGCS(fileInfo.fileId).then((content) => {
+          setFileContent(content)
+          // Optionally update the file metadata with the fetched content
+          if (data.onFileChange) {
+            data.onFileChange(id, {
+              ...fileInfo,
+              content,
+            })
+          }
+        })
+      }
+      // If no fileId, content might be directly available
+      else if (!fileInfo.fileId && fileInfo.content !== undefined) {
+        setFileContent(fileInfo.content)
+      }
+    } else if (!showPreview) {
+      // Clear content when preview is closed to save memory
+      // Keep it if it's already loaded for faster re-opening
     }
-  }, [fileInfo])
+  }, [showPreview, fileInfo, fetchFileFromGCS, data, id])
 
   // Initialize window when preview opens
   useEffect(() => {
@@ -209,10 +292,11 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
               <p className="text-[9px] text-gray-400">png, pdf, jpg, docx accepted</p>
               <button
                 type="button"
-                className="nodrag mt-2 inline-flex items-center justify-center rounded-full bg-[#7BA4F4] px-10 py-2 text-white text-sm font-semibold shadow"
+                disabled={isUploading}
+                className="nodrag mt-2 inline-flex items-center justify-center rounded-full bg-[#7BA4F4] px-10 py-2 text-white text-sm font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => fileInputRef.current?.click()}
               >
-                Browse
+                {isUploading ? "Uploading..." : "Browse"}
               </button>
             </div>
           )}
@@ -249,7 +333,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
                 <PreviewWindow
                   isOpen={showPreview}
                   fileName={fileInfo.name}
-                  fileContent={fileContent}
+                  fileContent={isLoadingContent ? "Loading file from storage..." : fileContent}
                   onContentChange={(newContent) => {
                     setFileContent(newContent)
                     if (fileInfo && data.onFileChange) {

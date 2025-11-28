@@ -13,17 +13,17 @@ export default function NewLeafletPage() {
 
   if (status === "loading") {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div>Loading...</div>
+      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
+        <div className="text-gray-600">Loading...</div>
       </div>
     )
   }
 
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to create a project</h1>
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">Please sign in to create a project</h1>
           <LoginButton />
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function NewLeafletPage() {
       }
 
       const project = await response.json()
-      router.push(`/project/${project.id}`)
+      router.push(`/leaflet/${project.id}`)
     } catch (error) {
       console.error("Error creating project:", error)
       alert(
@@ -68,9 +68,9 @@ export default function NewLeafletPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-8">
+    <div className="flex-1 overflow-auto bg-[#C9D9F8] p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Create New Project</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Create New Project</h1>
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="space-y-4">
@@ -84,7 +84,7 @@ export default function NewLeafletPage() {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Enter project name..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7BA4F4]"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleCreate()
@@ -97,7 +97,7 @@ export default function NewLeafletPage() {
               <button
                 onClick={handleCreate}
                 disabled={isCreating || !projectName.trim()}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#7BA4F4] text-white rounded-lg hover:bg-[#6a94e3] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCreating ? "Creating..." : "Create Project"}
               </button>

@@ -10,6 +10,7 @@
     "db:push": "dotenv -e .env.local -- prisma db push",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:studio": "dotenv -e .env.local -- prisma studio",
+    "db:query": "dotenv -e .env.local -- tsx scripts/query-db.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "eslint-config-next": "16.0.4",
     "prisma": "^5.19.0",
     "tailwindcss": "^4",
+    "tsx": "^4.7.0",
     "typescript": "^5"
   }
 }

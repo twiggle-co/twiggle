@@ -61,3 +61,13 @@ twiggle-frontend/
 4. **Start development** → `npm run dev`
 
 For detailed instructions, see the individual setup guides above.
+
+## Quick Database Access
+
+**View your database with Prisma Studio:**
+```bash
+npm run db:studio
+```
+Opens at `http://localhost:5555` - a visual UI to browse, edit, and manage your database.
+
+For production database access, see [Database Setup Guide](./setup/database-setup.md#accessing-database-in-production).

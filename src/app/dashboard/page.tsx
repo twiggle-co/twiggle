@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react"
 import { LoginButton } from "@/components/auth/LoginButton"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { ProjectCard } from "@/components/dashboard/ProjectCard"
+import { Grid3x3, List, ChevronDown, Plus } from "lucide-react"
 
 interface Project {
   id: string
@@ -18,6 +20,8 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [activeFilter, setActiveFilter] = useState("recently-viewed")
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -45,45 +49,102 @@ export default function DashboardPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div>Loading...</div>
+      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
+        <div className="text-gray-600">Loading...</div>
       </div>
     )
   }
 
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to view your projects</h1>
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">Please sign in to view your projects</h1>
           <LoginButton />
         </div>
       </div>
     )
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  }
+  const filters = [
+    { id: "recently-viewed", label: "Recently viewed" },
+    { id: "shared-files", label: "Shared files" },
+    { id: "shared-projects", label: "Shared projects" },
+  ]
 
   return (
-    <div className="flex-1 overflow-auto p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">My Projects</h1>
-          <Link
-            href="/dashboard/new"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            New Project
-          </Link>
+    <div className="flex-1 overflow-auto bg-[#C9D9F8]">
+      <div className="p-8">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-semibold text-gray-900">Recents</h1>
+            <Link
+              href="/dashboard/new"
+              className="flex items-center gap-2 px-4 py-2 bg-[#7BA4F4] text-white rounded-lg hover:bg-[#6a94e3] transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Project</span>
+            </Link>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1 mb-4">
+            {filters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeFilter === filter.id
+                    ? "bg-[#7BA4F4] text-white"
+                    : "text-gray-600 hover:bg-white/50"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Filter Dropdowns and View Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+                All organizations
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+                All files
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+                Last viewed
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 bg-white rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded transition-colors ${
+                  viewMode === "grid" ? "bg-[#7BA4F4] text-white" : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded transition-colors ${
+                  viewMode === "list" ? "bg-[#7BA4F4] text-white" : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Error Message */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             {error}
@@ -96,34 +157,34 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Projects Grid/List */}
         {projects.length === 0 && !error ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-white rounded-lg">
             <p className="text-gray-500 mb-4">No projects yet</p>
             <Link
               href="/dashboard/new"
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#7BA4F4] text-white rounded-lg hover:bg-[#6a94e3]"
             >
+              <Plus className="h-4 w-4" />
               Create your first project
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                : "space-y-2"
+            }
+          >
             {projects.map((project) => (
-              <Link
+              <ProjectCard
                 key={project.id}
-                href={`/project/${project.id}`}
-                className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-              >
-                <h2 className="text-xl font-semibold mb-2">{project.title}</h2>
-                {project.description && (
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                    {project.description}
-                  </p>
-                )}
-                <p className="text-sm text-gray-500">
-                  Updated {formatDate(project.updatedAt)}
-                </p>
-              </Link>
+                id={project.id}
+                title={project.title}
+                description={project.description}
+                updatedAt={project.updatedAt}
+              />
             ))}
           </div>
         )}

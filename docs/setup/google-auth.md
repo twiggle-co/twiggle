@@ -32,13 +32,17 @@ Note: We're using the beta version (v5) which is compatible with Next.js 16 App 
 5. Create OAuth client ID:
    - Application type: **Web application**
    - Name: `Twiggle Frontend`
-   - Authorized JavaScript origins:
+   - **Authorized JavaScript origins:**
      - `http://localhost:3000` (for development)
-     - `https://your-vercel-domain.vercel.app` (for production)
-   - Authorized redirect URIs:
+     - `https://twiggle.co` (for production)
+     - `https://www.twiggle.co` (if you use www subdomain)
+   - **Authorized redirect URIs:**
      - `http://localhost:3000/api/auth/callback/google` (for development)
-     - `https://your-vercel-domain.vercel.app/api/auth/callback/google` (for production)
+     - `https://twiggle.co/api/auth/callback/google` (for production)
+     - `https://www.twiggle.co/api/auth/callback/google` (if you use www subdomain)
 6. Copy the **Client ID** and **Client Secret**
+
+⚠️ **Important**: The redirect URIs must match **exactly** (including protocol `https://`, no trailing slashes)
 
 ### 2. Environment Variables
 
@@ -46,7 +50,9 @@ Add to your `.env.local` (for development) and Vercel environment variables:
 
 ```env
 # NextAuth.js
-NEXTAUTH_URL=http://localhost:3000  # For production, use your Vercel URL
+NEXTAUTH_URL=http://localhost:3000  # For local development
+# For production on Vercel with custom domain:
+# NEXTAUTH_URL=https://twiggle.co
 NEXTAUTH_SECRET=your-secret-key-here  # Generate with: openssl rand -base64 32
 
 # Google OAuth
@@ -156,15 +162,60 @@ export default async function ProtectedPage() {
 
 ## Vercel Deployment
 
-1. Add all environment variables to Vercel:
-   - `NEXTAUTH_URL` (your production URL)
-   - `NEXTAUTH_SECRET`
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
+1. **Add environment variables to Vercel:**
+   - Go to your Vercel project → **Settings** → **Environment Variables**
+   - Add the following:
+     - `NEXTAUTH_URL` = `https://twiggle.co` (your production domain)
+     - `NEXTAUTH_SECRET` = (your generated secret)
+     - `GOOGLE_CLIENT_ID` = (your Google OAuth client ID)
+     - `GOOGLE_CLIENT_SECRET` = (your Google OAuth client secret)
+   - Make sure to set these for **Production**, **Preview**, and **Development** environments
 
-2. Update Google OAuth redirect URIs to include your Vercel domain
+2. **Update Google OAuth redirect URIs:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - Click on your OAuth 2.0 Client ID
+   - Under **Authorized redirect URIs**, ensure you have:
+     - `https://twiggle.co/api/auth/callback/google`
+     - `https://www.twiggle.co/api/auth/callback/google` (if you use www)
+   - Click **Save**
 
-3. Redeploy your application
+3. **Redeploy your application** after making changes
+
+## Troubleshooting
+
+### Error 400: redirect_uri_mismatch
+
+This error occurs when the redirect URI in your request doesn't match what's configured in Google Cloud Console.
+
+**To fix:**
+
+1. **Check your current redirect URI:**
+   - The redirect URI NextAuth uses is: `{NEXTAUTH_URL}/api/auth/callback/google`
+   - For local: `http://localhost:3000/api/auth/callback/google`
+   - For production: `https://twiggle.co/api/auth/callback/google`
+
+2. **Verify in Google Cloud Console:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - Click on your OAuth 2.0 Client ID
+   - Check **Authorized redirect URIs** section
+   - Make sure the exact URI is listed (case-sensitive, must include `https://`, no trailing slash)
+
+3. **Common mistakes:**
+   - ❌ `http://twiggle.co/api/auth/callback/google` (wrong protocol - should be `https://`)
+   - ❌ `https://twiggle.co/api/auth/callback/google/` (trailing slash)
+   - ❌ `https://www.twiggle.co/api/auth/callback/google` (www mismatch if you don't use www)
+   - ✅ `https://twiggle.co/api/auth/callback/google` (correct)
+
+4. **If using both www and non-www:**
+   - Add both redirect URIs:
+     - `https://twiggle.co/api/auth/callback/google`
+     - `https://www.twiggle.co/api/auth/callback/google`
+   - Set `NEXTAUTH_URL` to match your primary domain
+
+5. **After updating redirect URIs:**
+   - Wait 1-2 minutes for changes to propagate
+   - Clear your browser cache/cookies
+   - Try signing in again
 
 ## Alternative Solutions
 

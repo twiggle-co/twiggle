@@ -15,7 +15,7 @@ function onQuickAdd(nodeType: CanvasNodeKind) {
   requestCanvasNode(nodeType)
 }
 
-export function Sidebar() {
+export function LeafletSidebar() {
   return (
     <div className="w-64 bg-[#F7F2E9] border-r border-gray-200 p-4 flex flex-col gap-6">
       <div className="relative">
@@ -99,3 +99,4 @@ export function Sidebar() {
     </div>
   )
 }
+

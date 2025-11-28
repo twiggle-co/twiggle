@@ -1,9 +1,15 @@
-import { auth } from "@/app/api/auth/[...nextauth]/route"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  const session = await auth()
+  // Check for session cookie instead of calling auth() which uses Prisma
+  // This works in Edge Runtime without requiring database access
+  // NextAuth v5 uses these cookie names (varies by environment and config)
+  const sessionToken =
+    request.cookies.get("authjs.session-token")?.value ||
+    request.cookies.get("__Secure-authjs.session-token")?.value ||
+    request.cookies.get("next-auth.session-token")?.value ||
+    request.cookies.get("__Secure-next-auth.session-token")?.value
 
   // Protect dashboard and project routes
   const isProtectedRoute =
@@ -11,7 +17,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/project") ||
     request.nextUrl.pathname.startsWith("/leaflet")
 
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !sessionToken) {
     const signInUrl = new URL("/api/auth/signin", request.url)
     signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname)
     return NextResponse.redirect(signInUrl)

@@ -33,3 +33,7 @@ const { handlers, auth } = NextAuth(authOptions)
 export const { GET, POST } = handlers
 export { auth }
 
+// Ensure this route runs in Node.js runtime (not Edge Runtime)
+// This is required because Prisma doesn't work in Edge Runtime
+export const runtime = "nodejs"
+

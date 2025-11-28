@@ -99,5 +99,3 @@ After pushing:
 3. You can invite collaborators
 4. You can create branches for features
 
-
-

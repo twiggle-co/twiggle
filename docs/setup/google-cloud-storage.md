@@ -1,6 +1,6 @@
 # Google Cloud Storage Setup
 
-This application uses Google Cloud Storage to temporarily store uploaded files.
+This application uses Google Cloud Storage to store uploaded files.
 
 ## Quick Start
 
@@ -8,8 +8,6 @@ This application uses Google Cloud Storage to temporarily store uploaded files.
 2. Create a service account with proper permissions
 3. Configure environment variables
 4. Deploy
-
-See detailed instructions below.
 
 ## Step 1: Create Google Cloud Storage Bucket
 
@@ -63,14 +61,14 @@ See detailed instructions below.
 
 ### Local Development
 
-The app will automatically use the key file at `key/twiggle-479508-98239b893140.json` if no environment variables are set.
+The app will automatically use the key file at `key/twiggle-479508-cd17df22f76a.json` if no environment variables are set.
 
 Or create a `.env.local` file:
 
 ```env
 # Option 1: Use service account key file path
 GCS_PROJECT_ID=twiggle-479508
-GCS_KEY_FILENAME=key/twiggle-479508-98239b893140.json
+GCS_KEY_FILENAME=key/twiggle-479508-cd17df22f76a.json
 GCS_BUCKET_NAME=twiggle-files
 
 # Option 2: Use credentials from environment variable
@@ -139,3 +137,7 @@ GCS_BUCKET_NAME=twiggle-files
 3. User clicks preview → file is retrieved from Google Cloud Storage and displayed in a popout window
 4. Files are stored temporarily and can be accessed via the storage URL
 
+## Related Documentation
+
+- [Database Setup](./database-setup.md) - Database configuration
+- [Storage Architecture](./storage-architecture.md) - Understanding storage architecture

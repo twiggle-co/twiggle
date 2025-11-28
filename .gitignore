@@ -43,3 +43,9 @@ next-env.d.ts
 # secrets and credentials
 key/
 *.json.key
+
+.vercel
+.env*.local
+
+.vercel
+.env*.local

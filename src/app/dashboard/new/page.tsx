@@ -38,17 +38,31 @@ export default function NewLeafletPage() {
 
     setIsCreating(true)
     try {
-      // TODO: Call API to create new leaflet/project
-      // For now, generate a random ID and redirect
-      const newTwigId = `twig-${Date.now()}-${Math.random().toString(36).substring(7)}`
-      
-      // TODO: Save project name and metadata via API
-      // await fetch('/api/leaflets', { method: 'POST', body: JSON.stringify({ name: projectName }) })
-      
-      router.push(`/leaflet/${newTwigId}`)
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: projectName.trim(),
+          description: "",
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to create project")
+      }
+
+      const project = await response.json()
+      router.push(`/project/${project.id}`)
     } catch (error) {
       console.error("Error creating project:", error)
-      alert("Failed to create project. Please try again.")
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to create project. Please try again."
+      )
       setIsCreating(false)
     }
   }

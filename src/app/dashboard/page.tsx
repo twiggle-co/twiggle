@@ -3,11 +3,47 @@
 import { useSession } from "next-auth/react"
 import { LoginButton } from "@/components/auth/LoginButton"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+
+interface Project {
+  id: string
+  title: string
+  description: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchProjects()
+    }
+  }, [status])
+
+  const fetchProjects = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/projects")
+      if (!response.ok) {
+        throw new Error("Failed to fetch projects")
+      }
+      const data = await response.json()
+      setProjects(data)
+      setError(null)
+    } catch (err) {
+      console.error("Error fetching projects:", err)
+      setError("Failed to load projects. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (status === "loading" || isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div>Loading...</div>
@@ -26,11 +62,14 @@ export default function DashboardPage() {
     )
   }
 
-  // TODO: Fetch user's projects from API
-  const projects = [
-    { id: "abc123", name: "Project Alpha", updatedAt: "2025-01-15" },
-    { id: "def456", name: "Project Beta", updatedAt: "2025-01-14" },
-  ]
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
 
   return (
     <div className="flex-1 overflow-auto p-8">
@@ -45,7 +84,19 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {projects.length === 0 ? (
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+            <button
+              onClick={fetchProjects}
+              className="ml-2 underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {projects.length === 0 && !error ? (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No projects yet</p>
             <Link
@@ -60,11 +111,18 @@ export default function DashboardPage() {
             {projects.map((project) => (
               <Link
                 key={project.id}
-                href={`/leaflet/${project.id}`}
+                href={`/project/${project.id}`}
                 className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
               >
-                <h2 className="text-xl font-semibold mb-2">{project.name}</h2>
-                <p className="text-sm text-gray-500">Updated {project.updatedAt}</p>
+                <h2 className="text-xl font-semibold mb-2">{project.title}</h2>
+                {project.description && (
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                    {project.description}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500">
+                  Updated {formatDate(project.updatedAt)}
+                </p>
               </Link>
             ))}
           </div>

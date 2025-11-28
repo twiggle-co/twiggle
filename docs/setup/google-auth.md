@@ -1,13 +1,8 @@
-# Google User Login Setup Guide
+# Google Authentication Setup
 
-## Recommended Solution: NextAuth.js (Auth.js)
+## Overview
 
-NextAuth.js is the most popular authentication solution for Next.js applications. It provides:
-- Easy Google OAuth integration
-- Secure session management
-- Built-in CSRF protection
-- TypeScript support
-- Works seamlessly with Next.js App Router
+This application uses NextAuth.js (Auth.js) for Google OAuth authentication. NextAuth.js provides secure session management, CSRF protection, and seamless integration with Next.js App Router.
 
 ## Installation
 
@@ -34,12 +29,10 @@ Note: We're using the beta version (v5) which is compatible with Next.js 16 App 
    - Name: `Twiggle Frontend`
    - **Authorized JavaScript origins:**
      - `http://localhost:3000` (for development)
-     - `https://twiggle.co` (for production)
-     - `https://www.twiggle.co` (if you use www subdomain)
+     - `https://yourdomain.com` (for production)
    - **Authorized redirect URIs:**
      - `http://localhost:3000/api/auth/callback/google` (for development)
-     - `https://twiggle.co/api/auth/callback/google` (for production)
-     - `https://www.twiggle.co/api/auth/callback/google` (if you use www subdomain)
+     - `https://yourdomain.com/api/auth/callback/google` (for production)
 6. Copy the **Client ID** and **Client Secret**
 
 ⚠️ **Important**: The redirect URIs must match **exactly** (including protocol `https://`, no trailing slashes)
@@ -51,8 +44,7 @@ Add to your `.env.local` (for development) and Vercel environment variables:
 ```env
 # NextAuth.js
 NEXTAUTH_URL=http://localhost:3000  # For local development
-# For production on Vercel with custom domain:
-# NEXTAUTH_URL=https://twiggle.co
+# For production: NEXTAUTH_URL=https://yourdomain.com
 NEXTAUTH_SECRET=your-secret-key-here  # Generate with: openssl rand -base64 32
 
 # Google OAuth
@@ -86,15 +78,11 @@ src/
           route.ts          # Auth API route
     layout.tsx              # Update to include SessionProvider
     user/
-      page.tsx               # Update to show user info
+      page.tsx              # Update to show user info
   components/
     auth/
       LoginButton.tsx        # Login/logout button component
 ```
-
-## Implementation Files
-
-See the implementation files created in the project.
 
 ## Usage in Components
 
@@ -165,7 +153,7 @@ export default async function ProtectedPage() {
 1. **Add environment variables to Vercel:**
    - Go to your Vercel project → **Settings** → **Environment Variables**
    - Add the following:
-     - `NEXTAUTH_URL` = `https://twiggle.co` (your production domain)
+     - `NEXTAUTH_URL` = `https://yourdomain.com` (your production domain)
      - `NEXTAUTH_SECRET` = (your generated secret)
      - `GOOGLE_CLIENT_ID` = (your Google OAuth client ID)
      - `GOOGLE_CLIENT_SECRET` = (your Google OAuth client secret)
@@ -175,8 +163,7 @@ export default async function ProtectedPage() {
    - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
    - Click on your OAuth 2.0 Client ID
    - Under **Authorized redirect URIs**, ensure you have:
-     - `https://twiggle.co/api/auth/callback/google`
-     - `https://www.twiggle.co/api/auth/callback/google` (if you use www)
+     - `https://yourdomain.com/api/auth/callback/google`
    - Click **Save**
 
 3. **Redeploy your application** after making changes
@@ -192,7 +179,7 @@ This error occurs when the redirect URI in your request doesn't match what's con
 1. **Check your current redirect URI:**
    - The redirect URI NextAuth uses is: `{NEXTAUTH_URL}/api/auth/callback/google`
    - For local: `http://localhost:3000/api/auth/callback/google`
-   - For production: `https://twiggle.co/api/auth/callback/google`
+   - For production: `https://yourdomain.com/api/auth/callback/google`
 
 2. **Verify in Google Cloud Console:**
    - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
@@ -201,45 +188,16 @@ This error occurs when the redirect URI in your request doesn't match what's con
    - Make sure the exact URI is listed (case-sensitive, must include `https://`, no trailing slash)
 
 3. **Common mistakes:**
-   - ❌ `http://twiggle.co/api/auth/callback/google` (wrong protocol - should be `https://`)
-   - ❌ `https://twiggle.co/api/auth/callback/google/` (trailing slash)
-   - ❌ `https://www.twiggle.co/api/auth/callback/google` (www mismatch if you don't use www)
-   - ✅ `https://twiggle.co/api/auth/callback/google` (correct)
+   - ❌ `http://yourdomain.com/api/auth/callback/google` (wrong protocol - should be `https://`)
+   - ❌ `https://yourdomain.com/api/auth/callback/google/` (trailing slash)
+   - ✅ `https://yourdomain.com/api/auth/callback/google` (correct)
 
-4. **If using both www and non-www:**
-   - Add both redirect URIs:
-     - `https://twiggle.co/api/auth/callback/google`
-     - `https://www.twiggle.co/api/auth/callback/google`
-   - Set `NEXTAUTH_URL` to match your primary domain
-
-5. **After updating redirect URIs:**
+4. **After updating redirect URIs:**
    - Wait 1-2 minutes for changes to propagate
    - Clear your browser cache/cookies
    - Try signing in again
 
-## Alternative Solutions
+## Related Documentation
 
-### Option 2: Clerk (Easier, but paid)
-- Very easy setup
-- Pre-built UI components
-- Free tier available
-- More features out of the box
-
-### Option 3: Firebase Auth
-- Good if you're already using Firebase
-- Free tier available
-- Easy Google integration
-
-### Option 4: Custom OAuth Implementation
-- More control but more work
-- Requires handling tokens, sessions, CSRF protection yourself
-
-## Next Steps
-
-1. Install NextAuth.js
-2. Set up Google OAuth credentials
-3. Add environment variables
-4. Implement the auth route handler
-5. Add login/logout UI components
-6. Protect routes/pages as needed
-
+- [Database Setup](./database-setup.md) - Database configuration
+- [Storage Setup](./google-cloud-storage.md) - File storage setup

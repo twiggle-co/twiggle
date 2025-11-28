@@ -50,9 +50,13 @@ npm start
 
 Detailed setup guides are available in the [`/docs`](./docs) directory:
 
-- [Google Cloud Storage Setup](./docs/setup/google-cloud-storage.md)
-- [Google Authentication Setup](./docs/setup/google-auth.md)
-- [GitHub Setup](./docs/setup/github.md)
+- [Quick Setup Guide](./docs/setup/setup-quickstart.md) - **Start here** - 5-minute setup
+- [Database Setup](./docs/setup/database-setup.md) - Prisma + Vercel Postgres
+- [Google Authentication Setup](./docs/setup/google-auth.md) - Google OAuth configuration
+- [Google Cloud Storage Setup](./docs/setup/google-cloud-storage.md) - File storage setup
+- [GitHub Setup](./docs/setup/github.md) - Version control setup
+
+See the [Documentation Index](./docs/README.md) for complete documentation.
 
 ## Tech Stack
 

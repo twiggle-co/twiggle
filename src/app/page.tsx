@@ -5,16 +5,20 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { ReactFlow, Background, Controls, applyNodeChanges, applyEdgeChanges, BackgroundVariant, ReactFlowProvider, useReactFlow, type Node, type Edge, Handle, Position } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-// Project introduction messages
+// Twiggle features
 const projectMessages = [
-  "Twiggle: Visual workflow builder for creative projects",
+  "Visual workflow builder with drag-and-drop interface",
   "Connect files, agents, and tools in an intuitive canvas",
-  "Upload files to Google Cloud Storage seamlessly",
-  "Build complex workflows with drag-and-drop nodes",
+  "Upload and store files seamlessly with Google Cloud Storage",
   "Preview and edit files in interactive popout windows",
-  "Create projects called 'leaflets' to organize your work",
-  "Link nodes together to build powerful automation",
-  "Sign in with Google to save and sync your projects",
+  "Create and organize projects with 'leaflets' system",
+  "Link nodes together to build powerful automation workflows",
+  "Real-time collaboration and project synchronization",
+  "Secure authentication with Google OAuth integration",
+  "Node-based architecture for flexible workflow design",
+  "Cloud storage integration for easy file management",
+  "Interactive canvas with zoom, pan, and fit-to-view controls",
+  "Extensible platform supporting multiple file types and formats",
 ]
 
 // Custom node component with project introduction text
@@ -53,7 +57,7 @@ function doLinesIntersect(
 
 // Generate a puzzle with nodes and edges
 function generatePuzzle(): { nodes: Node[]; edges: Edge[] } {
-  const nodeCount = 5
+  const nodeCount = Math.floor(Math.random() * 4) + 5 // Random between 3 and 6
   const nodes: Node[] = []
   const edges: Edge[] = []
 
@@ -82,12 +86,31 @@ function generatePuzzle(): { nodes: Node[]; edges: Edge[] } {
     })
   }
 
-  // Create edges that form a solvable puzzle for 5 nodes
+  // Create edges that form a solvable puzzle
   // Connect nodes in a way that creates crossings when scrambled
-  const connections = [
-    [0, 2], [1, 3], [2, 4], [3, 0], [4, 1],
-    [0, 3], [1, 4]
-  ]
+  const connections: number[][] = []
+  
+  // Generate connections based on node count
+  // For each node, connect to a few other nodes to create interesting puzzles
+  for (let i = 0; i < nodeCount; i++) {
+    // Connect to 2-3 other nodes
+    const numConnections = nodeCount <= 3 ? 2 : Math.floor(Math.random() * 2) + 2
+    const connected = new Set<number>()
+    
+    while (connected.size < numConnections) {
+      const target = Math.floor(Math.random() * nodeCount)
+      if (target !== i && !connected.has(target)) {
+        connected.add(target)
+        // Avoid duplicate connections
+        const exists = connections.some(([from, to]) => 
+          (from === i && to === target) || (from === target && to === i)
+        )
+        if (!exists) {
+          connections.push([i, target])
+        }
+      }
+    }
+  }
 
   connections.forEach(([from, to], idx) => {
     edges.push({

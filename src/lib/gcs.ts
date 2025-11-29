@@ -1,4 +1,5 @@
 import { Storage } from "@google-cloud/storage"
+import type { File, Bucket } from "@google-cloud/storage"
 import path from "path"
 import { stripQuotes } from "./env"
 
@@ -159,7 +160,7 @@ export function getStorageInstance(): Storage {
 /**
  * Get file URL (public or signed)
  */
-async function getFileUrl(fileName: string, file: ReturnType<typeof getStorageInstance>["bucket"]["file"]): Promise<string> {
+async function getFileUrl(fileName: string, file: File): Promise<string> {
   try {
     await file.makePublic()
     return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
@@ -183,7 +184,7 @@ async function getFileUrl(fileName: string, file: ReturnType<typeof getStorageIn
 /**
  * Verify bucket exists and is accessible
  */
-async function verifyBucket(bucket: ReturnType<typeof getStorageInstance>["bucket"]): Promise<void> {
+async function verifyBucket(bucket: Bucket): Promise<void> {
   const [bucketExists] = await bucket.exists()
   if (!bucketExists) {
     throw new Error(

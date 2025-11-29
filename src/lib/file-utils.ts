@@ -1,4 +1,5 @@
 import { getStorageInstance, BUCKET_NAME } from "./gcs"
+import type { File } from "@google-cloud/storage"
 
 /**
  * MIME type mapping for common file extensions
@@ -43,7 +44,7 @@ export function generateStorageFileName(
  */
 async function getFileUrl(
   fileName: string,
-  file: ReturnType<typeof getStorageInstance>["bucket"]["file"]
+  file: File
 ): Promise<string> {
   try {
     await file.makePublic()

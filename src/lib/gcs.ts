@@ -17,6 +17,12 @@ export function getStorageInstance(): Storage {
   }
 
   // Option 2: Use credentials JSON from environment variable
+  // 
+  // IMPORTANT: Difference between .env.local and Vercel production:
+  // - .env.local: Often uses GCS_KEY_FILENAME (reads actual JSON file with real newlines)
+  // - Vercel: Stores GCS_CREDENTIALS as raw string. When JSON has "\\n", JSON.parse() 
+  //   converts it to literal \n (backslash + n), not actual newlines. We fix this below.
+  //
   if (process.env.GCS_CREDENTIALS) {
     let credentialsString = process.env.GCS_CREDENTIALS.trim()
 
@@ -70,14 +76,37 @@ export function getStorageInstance(): Storage {
       let privateKey = parsedCredentials.private_key.trim()
       
       // Handle multiple escape scenarios:
-      // 1. Double-escaped newlines: \\\\n -> \n (when stored in env vars, \\ becomes \\\\)
-      // 2. Escaped newlines: \\n -> \n (standard escaping)
-      // 3. Literal \n strings: \n -> \n (if already single escaped)
-      // Process in order to handle all cases
-      privateKey = privateKey
-        .replace(/\\\\n/g, "\n")  // Handle double-escaped newlines first
-        .replace(/\\n/g, "\n")    // Then handle single-escaped newlines
-        .trim()
+      // After JSON.parse, escaped newlines in the JSON string become literal \n (backslash + n)
+      // We need to convert these literal \n sequences to actual newline characters
+      // 
+      // The key difference between .env.local and Vercel:
+      // - .env.local: May use GCS_KEY_FILENAME (reads actual JSON file with real newlines)
+      // - Vercel: Stores raw string, JSON.parse converts \\n to literal \n (backslash + n)
+      // 
+      // Process in order to handle all cases:
+      
+      // Method 1: Use split/join which is more reliable than regex for literal sequences
+      // This handles the most common case: literal \n (backslash + n) after JSON.parse
+      if (privateKey.includes("\\n")) {
+        privateKey = privateKey.split("\\n").join("\n")
+      }
+      
+      // Method 2: Also try regex replacements for edge cases
+      // Handle double-escaped newlines (shouldn't happen after JSON.parse, but just in case)
+      privateKey = privateKey.replace(/\\\\n/g, "\n")
+      
+      // Handle any remaining literal \n sequences (backslash followed by n)
+      // In a regex, \\ matches a literal backslash, so \\n matches backslash+n
+      privateKey = privateKey.replace(/\\n/g, "\n")
+      
+      // Trim again after replacements
+      privateKey = privateKey.trim()
+      
+      // Final check: if we still have literal \n sequences, try split/join one more time
+      // This is a safety net for edge cases
+      if (privateKey.includes("\\n")) {
+        privateKey = privateKey.split("\\n").join("\n")
+      }
       
       // Ensure proper PEM format with newlines
       // The key should have newlines after BEGIN and before END
@@ -86,6 +115,15 @@ export function getStorageInstance(): Storage {
         privateKey = privateKey
           .replace(/-----BEGIN PRIVATE KEY-----/, "-----BEGIN PRIVATE KEY-----\n")
           .replace(/-----END PRIVATE KEY-----/, "\n-----END PRIVATE KEY-----")
+      }
+      
+      // Final validation: check if we still have literal \n sequences (this shouldn't happen)
+      if (privateKey.includes("\\n")) {
+        // Last resort: try splitting on literal backslash+n
+        const parts = privateKey.split("\\n")
+        if (parts.length > 1) {
+          privateKey = parts.join("\n")
+        }
       }
       
       // Validate private key format

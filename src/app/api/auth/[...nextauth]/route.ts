@@ -22,8 +22,13 @@ export const authOptions = {
           return null
         }
 
-        // For test user: admin / 123456
-        if (credentials.username === "admin" && credentials.password === "123456") {
+        // For test user: admin@test.com / 123456
+        // Accept both "admin" and "admin@test.com" as username
+        const isAdminUser = 
+          (credentials.username === "admin" || credentials.username === "admin@test.com") &&
+          credentials.password === "123456"
+
+        if (isAdminUser) {
           // Find or create the test user
           let user = await prisma.user.findUnique({
             where: { email: "admin@test.com" },

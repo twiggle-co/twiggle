@@ -21,10 +21,34 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     signIn("google")
   }
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement email/password sign in
-    console.log("Email sign in:", email, password)
+    
+    if (!email || !password) {
+      alert("Please enter both email and password")
+      return
+    }
+    
+    try {
+      // Use email directly as username (credentials provider accepts both)
+      const result = await signIn("credentials", {
+        username: email, // Can be "admin@test.com" or "admin"
+        password,
+        redirect: false,
+      })
+      
+      if (result?.error) {
+        console.error("Login error:", result.error)
+        alert("Login failed: " + result.error)
+      } else if (result?.ok) {
+        // Close modal and redirect
+        onClose()
+        window.location.href = "/dashboard"
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      alert("Login failed. Please try again.")
+    }
   }
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {

@@ -27,6 +27,9 @@ interface StorageUsage {
   projectStorage: number
 }
 
+/**
+ * Format bytes to human-readable string
+ */
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B"
   const k = 1024
@@ -35,13 +38,17 @@ function formatBytes(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
 }
 
+/**
+ * Dashboard sidebar component
+ */
 export function DashboardSidebar() {
   const { data: session } = useSession()
   const pathname = usePathname()
   const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null)
   const [isLoadingStorage, setIsLoadingStorage] = useState(true)
   
-  const userInitial = session?.user?.name?.charAt(0).toUpperCase() || session?.user?.email?.charAt(0).toUpperCase() || "U"
+  const userInitial = session?.user?.name?.charAt(0).toUpperCase() || 
+                     session?.user?.email?.charAt(0).toUpperCase() || "U"
   const userName = session?.user?.name || session?.user?.email || "User"
 
   useEffect(() => {
@@ -100,7 +107,7 @@ export function DashboardSidebar() {
           </div>
           <div className="flex items-center gap-2">
             <UserProfileDropdown />
-            <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Notifications">
               <Bell className="h-4 w-4 text-gray-600" />
             </button>
           </div>
@@ -170,6 +177,7 @@ export function DashboardSidebar() {
                       // Handle add draft action
                     }}
                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity"
+                    aria-label="Add draft"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -216,4 +224,3 @@ export function DashboardSidebar() {
     </div>
   )
 }
-

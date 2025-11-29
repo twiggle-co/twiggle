@@ -5,13 +5,20 @@ import { Sparkles, User, Save, AlertCircle } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useState } from "react"
 
-type LeafletTopNavProps = {
+interface LeafletTopNavProps {
   projectName?: string
   twigId: string
   hasUnsavedChanges?: boolean
 }
 
-export function LeafletTopNav({ projectName, twigId, hasUnsavedChanges = false }: LeafletTopNavProps) {
+/**
+ * Leaflet (project canvas) top navigation
+ */
+export function LeafletTopNav({ 
+  projectName, 
+  twigId, 
+  hasUnsavedChanges = false 
+}: LeafletTopNavProps) {
   const { data: session } = useSession()
   const [isSaving, setIsSaving] = useState(false)
 
@@ -81,4 +88,3 @@ export function LeafletTopNav({ projectName, twigId, hasUnsavedChanges = false }
     </div>
   )
 }
-

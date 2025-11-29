@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/app/api/auth/[...nextauth]/route"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "./prisma"
 
-const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024 // 1GB
+/**
+ * Storage limit: 1GB
+ */
+const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
 
 /**
  * Get the authenticated user session
@@ -14,7 +17,7 @@ export async function getAuthenticatedUser() {
 }
 
 /**
- * Require authentication - returns error response if not authenticated
+ * Require authentication - throws error response if not authenticated
  */
 export async function requireAuth(): Promise<{ user: { id: string } }> {
   const session = await getAuthenticatedUser()
@@ -107,12 +110,21 @@ export async function verifyProjectAccess(
 }
 
 /**
+ * Error types for better error handling
+ */
+type ApiError = {
+  code?: string | number
+  message?: string
+  response?: { status?: number }
+}
+
+/**
  * Handle API errors consistently
  */
 export function handleApiError(error: unknown, defaultMessage: string) {
   console.error(defaultMessage, error)
 
-  const errorObj = error as any
+  const errorObj = error as ApiError
   let message = defaultMessage
   let statusCode = 500
 
@@ -168,4 +180,3 @@ export async function getStorageUsageResponse(userId: string) {
     projectStorage,
   })
 }
-

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { getStorageInstance, BUCKET_NAME } from "@/lib/gcs"
 import { handleApiError } from "@/lib/api-utils"
 
+/**
+ * GET /api/files/[fileId]
+ * Retrieve a file by its ID
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ fileId: string }> }

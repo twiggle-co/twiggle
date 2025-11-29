@@ -9,21 +9,28 @@ interface ProjectCardProps {
   updatedAt: string
 }
 
-export function ProjectCard({ id, title, description, updatedAt }: ProjectCardProps) {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 0) return "Today"
-    if (diffDays === 1) return "Yesterday"
-    if (diffDays < 7) return `${diffDays} days ago`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
-    return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`
-  }
+/**
+ * Format date to relative time string
+ */
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffTime = Math.abs(now.getTime() - date.getTime())
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return "Today"
+  if (diffDays === 1) return "Yesterday"
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
+  return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`
+}
 
+/**
+ * Project card component
+ * Displays project preview and metadata
+ */
+export function ProjectCard({ id, title, description, updatedAt }: ProjectCardProps) {
   return (
     <Link
       href={`/leaflet/${id}`}
@@ -50,9 +57,8 @@ export function ProjectCard({ id, title, description, updatedAt }: ProjectCardPr
             <div className="h-2 w-2 bg-white rounded-full"></div>
           </div>
         </div>
-        <p className="text-xs text-gray-500">Edited {formatDate(updatedAt)}</p>
+        <p className="text-xs text-gray-500">Edited {formatRelativeTime(updatedAt)}</p>
       </div>
     </Link>
   )
 }
-

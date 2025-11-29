@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, verifyProjectAccess, handleApiError } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 
+/**
+ * GET /api/projects/[id]
+ * Get a specific project
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,6 +22,10 @@ export async function GET(
   }
 }
 
+/**
+ * PATCH /api/projects/[id]
+ * Update a project
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -32,6 +40,7 @@ export async function PATCH(
     const { title, description } = body
 
     const updateData: { title?: string; description?: string } = {}
+    
     if (title !== undefined) {
       if (typeof title !== "string" || title.trim().length === 0) {
         return NextResponse.json(
@@ -41,6 +50,7 @@ export async function PATCH(
       }
       updateData.title = title.trim()
     }
+    
     if (description !== undefined) {
       updateData.description = description?.trim() || ""
     }
@@ -57,6 +67,10 @@ export async function PATCH(
   }
 }
 
+/**
+ * DELETE /api/projects/[id]
+ * Delete a project
+ */
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

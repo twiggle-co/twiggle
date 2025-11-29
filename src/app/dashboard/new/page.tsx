@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { LoginButton } from "@/components/auth/LoginButton"
 
-export default function NewLeafletPage() {
+/**
+ * New project creation page
+ */
+export default function NewProjectPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [projectName, setProjectName] = useState("")
@@ -114,4 +117,3 @@ export default function NewLeafletPage() {
     </div>
   )
 }
-

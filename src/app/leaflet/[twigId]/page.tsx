@@ -5,6 +5,9 @@ import { LeafletTopNav } from "@/components/navigation/LeafletTopNav"
 import { LeafletSidebar } from "@/components/sidebar/LeafletSidebar"
 import { NodeCanvas } from "@/components/canvas/NodeCanvas"
 
+/**
+ * Leaflet (project canvas) page
+ */
 export default function LeafletPage({
   params,
 }: {
@@ -13,6 +16,7 @@ export default function LeafletPage({
   const { twigId } = use(params)
   const [projectName, setProjectName] = useState("Loading...")
   const [isLoading, setIsLoading] = useState(true)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -36,8 +40,6 @@ export default function LeafletPage({
     }
   }, [twigId])
 
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-
   return (
     <div className="h-screen w-screen flex flex-col">
       <LeafletTopNav 
@@ -55,4 +57,3 @@ export default function LeafletPage({
     </div>
   )
 }
-

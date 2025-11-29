@@ -1,32 +1,52 @@
 import { Storage } from "@google-cloud/storage"
 import path from "path"
+import { stripQuotes } from "./env"
 
 /**
- * Strip surrounding quotes from environment variable values
- * Handles cases where Vercel or other platforms wrap values in quotes
+ * Google Cloud Storage configuration
  */
-function stripQuotes(value: string | undefined): string | undefined {
-  if (!value) return value
-  let trimmed = value.trim()
-  
-  // Remove surrounding double quotes or single quotes (handle multiple layers)
-  while (
-    ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-     (trimmed.startsWith("'") && trimmed.endsWith("'"))) &&
-    trimmed.length >= 2
-  ) {
-    trimmed = trimmed.slice(1, -1).trim()
-  }
-  
-  return trimmed
+export const BUCKET_NAME = stripQuotes(process.env.GCS_BUCKET_NAME) || "twiggle-files"
+
+const SIGNED_URL_EXPIRY_DAYS = 7
+const SIGNED_URL_EXPIRY_MS = SIGNED_URL_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+
+/**
+ * OpenSSL error codes that indicate legacy provider is needed
+ */
+const OPENSSL_ERROR_INDICATORS = [
+  "ERR_OSSL_UNSUPPORTED",
+  "DECODER routines",
+  "1E08010C",
+  "0308010C",
+]
+
+/**
+ * Check if error is an OpenSSL compatibility issue
+ */
+function isOpenSSLError(error: unknown): boolean {
+  const err = error as any
+  return (
+    err?.code === "ERR_OSSL_UNSUPPORTED" ||
+    OPENSSL_ERROR_INDICATORS.some((indicator) =>
+      err?.message?.includes(indicator)
+    )
+  )
 }
 
 /**
- * Get the bucket name from environment variables
- * Strips quotes if present (common in Vercel)
+ * Get OpenSSL error message
  */
-export const BUCKET_NAME =
-  stripQuotes(process.env.GCS_BUCKET_NAME) || "twiggle-files"
+function getOpenSSLErrorMessage(originalError: unknown): string {
+  const err = originalError as any
+  return (
+    "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
+    "Please set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables. " +
+    "Go to: Vercel Dashboard → Your Project → Settings → Environment Variables → " +
+    "Add NODE_OPTIONS with value '--openssl-legacy-provider'. " +
+    "Then redeploy your application. " +
+    `Original error: ${err?.message || String(originalError)}`
+  )
+}
 
 /**
  * Get Google Cloud Storage credentials from environment variables
@@ -35,8 +55,8 @@ export const BUCKET_NAME =
  * - GCS_KEY_FILENAME: Path to service account key file
  * - Fallback to default key file path
  */
-function getCredentials(): object | string | undefined {
-  // Option 1: Credentials from environment variable (base64 or JSON string)
+function getCredentials(): object | string {
+  // Option 1: Credentials from environment variable
   const credentialsEnv = stripQuotes(process.env.GCS_CREDENTIALS)
   if (credentialsEnv) {
     const credsStr = credentialsEnv.trim()
@@ -44,17 +64,18 @@ function getCredentials(): object | string | undefined {
     // Try parsing as base64 first
     try {
       const decoded = Buffer.from(credsStr, "base64").toString("utf8")
-      const parsed = JSON.parse(decoded)
-      return parsed
-    } catch (base64Error) {
+      return JSON.parse(decoded)
+    } catch {
       // Not base64, try parsing as JSON string
       try {
         return JSON.parse(credsStr)
       } catch (jsonError) {
-        const errorMessage = `GCS_CREDENTIALS must be valid JSON or base64-encoded JSON. ` +
-          `JSON parse error: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}. ` +
-          `First 100 chars of credentials: ${credsStr.substring(0, 100)}`
-        throw new Error(errorMessage)
+        const error = jsonError instanceof Error ? jsonError : new Error(String(jsonError))
+        throw new Error(
+          `GCS_CREDENTIALS must be valid JSON or base64-encoded JSON. ` +
+          `JSON parse error: ${error.message}. ` +
+          `First 100 chars: ${credsStr.substring(0, 100)}`
+        )
       }
     }
   }
@@ -66,13 +87,11 @@ function getCredentials(): object | string | undefined {
   }
 
   // Option 3: Fallback to default key file path
-  const defaultKeyPath = path.resolve("key/twiggle-479508-b9ea5eaacf83.json")
-  return defaultKeyPath
+  return path.resolve("key/twiggle-479508-b9ea5eaacf83.json")
 }
 
 /**
- * Get or create a Google Cloud Storage instance
- * Uses singleton pattern to avoid creating multiple instances
+ * Get or create a Google Cloud Storage instance (singleton)
  */
 let storageInstance: Storage | null = null
 
@@ -81,7 +100,7 @@ export function getStorageInstance(): Storage {
     return storageInstance
   }
 
-  // Diagnostic: Check if NODE_OPTIONS is set (helps with debugging OpenSSL issues)
+  // Warn about OpenSSL configuration
   if (!process.env.NODE_OPTIONS?.includes("openssl-legacy-provider")) {
     console.warn(
       "[GCS] WARNING: NODE_OPTIONS does not include --openssl-legacy-provider. " +
@@ -96,7 +115,7 @@ export function getStorageInstance(): Storage {
     if (!credentials) {
       throw new Error(
         "No Google Cloud Storage credentials found. " +
-          "Please set GCS_CREDENTIALS or GCS_KEY_FILENAME environment variable."
+        "Please set GCS_CREDENTIALS or GCS_KEY_FILENAME environment variable."
       )
     }
 
@@ -106,17 +125,16 @@ export function getStorageInstance(): Storage {
       credentials?: object
     } = {}
 
-    // Set project ID if provided (strip quotes if present)
+    // Set project ID if provided
     const projectId = stripQuotes(process.env.GCS_PROJECT_ID)
     if (projectId) {
       config.projectId = projectId
     }
 
-    // If credentials is a string, it's a file path
+    // Configure credentials
     if (typeof credentials === "string") {
       config.keyFilename = credentials
     } else {
-      // Otherwise, it's a credentials object
       config.credentials = credentials
       // Extract project_id from credentials if not set
       if (!config.projectId && "project_id" in credentials) {
@@ -126,54 +144,66 @@ export function getStorageInstance(): Storage {
 
     storageInstance = new Storage(config)
     return storageInstance
-  } catch (error: any) {
-    if (error?.message?.includes("No Google Cloud Storage credentials")) {
-      throw error
+  } catch (error) {
+    if (isOpenSSLError(error)) {
+      throw new Error(getOpenSSLErrorMessage(error))
     }
     
-    // Check for OpenSSL decoder errors (Node.js 17+ compatibility issue)
-    if (
-      error?.code === "ERR_OSSL_UNSUPPORTED" ||
-      error?.message?.includes("DECODER routines") ||
-      error?.message?.includes("1E08010C") ||
-      error?.message?.includes("0308010C")
-    ) {
-      throw new Error(
-        "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
-        "Please set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables. " +
-        "Go to: Vercel Dashboard → Your Project → Settings → Environment Variables → Add NODE_OPTIONS with value '--openssl-legacy-provider'. " +
-        "Then redeploy your application. " +
-        `Original error: ${error?.message || String(error)}`
-      )
-    }
-    
+    const err = error as Error
     throw new Error(
-      `Failed to initialize Google Cloud Storage: ${error?.message || error}`
+      `Failed to initialize Google Cloud Storage: ${err.message || String(error)}`
+    )
+  }
+}
+
+/**
+ * Get file URL (public or signed)
+ */
+async function getFileUrl(fileName: string, file: ReturnType<typeof getStorageInstance>["bucket"]["file"]): Promise<string> {
+  try {
+    await file.makePublic()
+    return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
+  } catch (makePublicError: any) {
+    // If uniform bucket-level access is enabled, use signed URL
+    if (
+      makePublicError?.code === 400 &&
+      makePublicError?.message?.includes("uniform bucket-level access")
+    ) {
+      const [signedUrl] = await file.getSignedUrl({
+        action: "read",
+        expires: Date.now() + SIGNED_URL_EXPIRY_MS,
+      })
+      return signedUrl
+    }
+    // Fallback to public URL format
+    return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
+  }
+}
+
+/**
+ * Verify bucket exists and is accessible
+ */
+async function verifyBucket(bucket: ReturnType<typeof getStorageInstance>["bucket"]): Promise<void> {
+  const [bucketExists] = await bucket.exists()
+  if (!bucketExists) {
+    throw new Error(
+      `Bucket "${BUCKET_NAME}" does not exist or is not accessible`
     )
   }
 }
 
 /**
  * Upload JSON data to Google Cloud Storage
- * @param fileName - The file path/name in the bucket (e.g., "workflows/project-id/uuid.json")
- * @param data - The JSON data to upload
- * @returns The public or signed URL to access the file
  */
 export async function uploadJsonToGCS(
   fileName: string,
-  data: any
+  data: unknown
 ): Promise<string> {
   try {
     const storage = getStorageInstance()
     const bucket = storage.bucket(BUCKET_NAME)
 
-    // Verify bucket exists
-    const [bucketExists] = await bucket.exists()
-    if (!bucketExists) {
-      throw new Error(
-        `Bucket "${BUCKET_NAME}" does not exist or is not accessible`
-      )
-    }
+    await verifyBucket(bucket)
 
     // Convert data to JSON string and buffer
     const jsonString = JSON.stringify(data, null, 2)
@@ -190,46 +220,12 @@ export async function uploadJsonToGCS(
       },
     })
 
-    // Try to make file public, fallback to signed URL if uniform bucket-level access is enabled
-    let storageUrl: string
-    try {
-      await file.makePublic()
-      storageUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
-    } catch (makePublicError: any) {
-      // If uniform bucket-level access is enabled, use signed URL
-      if (
-        makePublicError?.code === 400 &&
-        makePublicError?.message?.includes("uniform bucket-level access")
-      ) {
-        const [signedUrl] = await file.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-        })
-        storageUrl = signedUrl
-      } else {
-        // Fallback to public URL format (bucket might already be public)
-        storageUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
-      }
-    }
-
-    return storageUrl
-  } catch (error: any) {
+    return getFileUrl(fileName, file)
+  } catch (error) {
     console.error("Error uploading JSON to GCS:", error)
     
-    // Check for OpenSSL decoder errors (Node.js 17+ compatibility issue)
-    if (
-      error?.code === "ERR_OSSL_UNSUPPORTED" ||
-      error?.message?.includes("DECODER routines") ||
-      error?.message?.includes("1E08010C") ||
-      error?.message?.includes("0308010C")
-    ) {
-      throw new Error(
-        "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
-        "Please set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables. " +
-        "Go to: Vercel Dashboard → Your Project → Settings → Environment Variables → Add NODE_OPTIONS with value '--openssl-legacy-provider'. " +
-        "Then redeploy your application. " +
-        `Original error: ${error?.message || String(error)}`
-      )
+    if (isOpenSSLError(error)) {
+      throw new Error(getOpenSSLErrorMessage(error))
     }
     
     throw error
@@ -237,56 +233,57 @@ export async function uploadJsonToGCS(
 }
 
 /**
- * Download JSON data from Google Cloud Storage
- * @param storageUrl - The full storage URL (public or signed)
- * @returns The parsed JSON data
+ * Extract file name from storage URL
  */
-export async function downloadJsonFromGCS(storageUrl: string): Promise<any> {
+function extractFileNameFromUrl(storageUrl: string): string {
+  // Handle public URLs: https://storage.googleapis.com/bucket-name/path/to/file.json
+  if (storageUrl.includes(`${BUCKET_NAME}/`)) {
+    const match = storageUrl.match(new RegExp(`${BUCKET_NAME}/([^?]+)`))
+    if (match) {
+      return match[1]
+    }
+  }
+
+  // Handle signed URLs
+  try {
+    const url = new URL(storageUrl)
+    return url.pathname.replace(`/${BUCKET_NAME}/`, "").replace(/^\//, "")
+  } catch {
+    // Invalid URL format
+  }
+
+  throw new Error(`Invalid storage URL format: ${storageUrl}`)
+}
+
+/**
+ * Download JSON data from Google Cloud Storage
+ */
+export async function downloadJsonFromGCS(storageUrl: string): Promise<unknown> {
   try {
     const storage = getStorageInstance()
     const bucket = storage.bucket(BUCKET_NAME)
 
-    // Extract file name from URL
-    // Handles both public URLs and signed URLs
-    let fileName: string
-    if (storageUrl.includes(`${BUCKET_NAME}/`)) {
-      // Extract from public URL: https://storage.googleapis.com/bucket-name/path/to/file.json
-      const match = storageUrl.match(new RegExp(`${BUCKET_NAME}/([^?]+)`))
-      if (match) {
-        fileName = match[1]
-      } else {
-        throw new Error(`Invalid storage URL format: ${storageUrl}`)
-      }
-    } else {
-      // For signed URLs, try to extract from query params or use the path
-      const url = new URL(storageUrl)
-      fileName = url.pathname.replace(`/${BUCKET_NAME}/`, "").replace(/^\//, "")
-    }
-
-    if (!fileName) {
-      throw new Error(`Could not extract file name from URL: ${storageUrl}`)
-    }
-
-    // Get file from bucket
+    const fileName = extractFileNameFromUrl(storageUrl)
     const file = bucket.file(fileName)
-    const [exists] = await file.exists()
 
+    // Verify file exists
+    const [exists] = await file.exists()
     if (!exists) {
       throw new Error(`File not found: ${fileName}`)
     }
 
-    // Download file content
+    // Download and parse JSON
     const [buffer] = await file.download()
     const jsonString = buffer.toString("utf8")
-    const data = JSON.parse(jsonString)
-
-    return data
-  } catch (error: any) {
+    return JSON.parse(jsonString)
+  } catch (error) {
     console.error("Error downloading JSON from GCS:", error)
-    if (error?.code === 404 || error?.message?.includes("does not exist")) {
+    
+    const err = error as any
+    if (err?.code === 404 || err?.message?.includes("does not exist")) {
       throw new Error(`File not found: ${storageUrl}`)
     }
+    
     throw error
   }
 }
-

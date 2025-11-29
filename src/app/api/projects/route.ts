@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { uploadJsonToGCS } from "@/lib/gcs"
 import { v4 as uuidv4 } from "uuid"
 
+/**
+ * GET /api/projects
+ * Get all projects for the authenticated user
+ */
 export async function GET() {
   try {
     const session = await requireAuth()
@@ -20,6 +24,10 @@ export async function GET() {
   }
 }
 
+/**
+ * POST /api/projects
+ * Create a new project
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth()
@@ -27,6 +35,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, description } = body
 
+    // Validate title
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return NextResponse.json(
         { error: "Title is required" },
@@ -66,14 +75,13 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(updatedProject, { status: 201 })
     } catch (gcsError: any) {
-      // If GCS upload fails, log detailed error but still return the project
+      // If GCS upload fails, log error but still return the project
       console.error("Failed to initialize workflow in GCS:", {
         error: gcsError,
         message: gcsError?.message,
         code: gcsError?.code,
-        stack: gcsError?.stack,
       })
-      
+
       // Return project without workflow URL - workflow can be created later
       return NextResponse.json(project, { status: 201 })
     }

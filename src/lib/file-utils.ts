@@ -1,22 +1,27 @@
-import { getStorageInstance, BUCKET_NAME } from "@/lib/gcs"
+import { getStorageInstance, BUCKET_NAME } from "./gcs"
 
 /**
- * Get MIME type from file type string (e.g., "Markdown (.md)" -> "text/markdown")
+ * MIME type mapping for common file extensions
+ */
+const MIME_TYPES: Record<string, string> = {
+  md: "text/markdown",
+  txt: "text/plain",
+  json: "application/json",
+  csv: "text/csv",
+  yaml: "text/yaml",
+  yml: "text/yaml",
+  html: "text/html",
+  xml: "application/xml",
+  toml: "text/toml",
+}
+
+/**
+ * Get MIME type from file type string
+ * Example: "Markdown (.md)" -> "text/markdown"
  */
 export function getMimeType(fileType: string): string {
-  const extension = fileType.match(/\(\.(\w+)\)/)?.[1] || ""
-  const mimeTypes: Record<string, string> = {
-    md: "text/markdown",
-    txt: "text/plain",
-    json: "application/json",
-    csv: "text/csv",
-    yaml: "text/yaml",
-    yml: "text/yaml",
-    html: "text/html",
-    xml: "application/xml",
-    toml: "text/toml",
-  }
-  return mimeTypes[extension.toLowerCase()] || "text/plain"
+  const extension = fileType.match(/\(\.(\w+)\)/)?.[1]?.toLowerCase() || ""
+  return MIME_TYPES[extension] || "text/plain"
 }
 
 /**
@@ -31,6 +36,33 @@ export function generateStorageFileName(
     return `workflows/${projectId}/files/${fileId}.${extension}`
   }
   return `${fileId}.${extension}`
+}
+
+/**
+ * Get file URL (public or signed) from GCS file
+ */
+async function getFileUrl(
+  fileName: string,
+  file: ReturnType<typeof getStorageInstance>["bucket"]["file"]
+): Promise<string> {
+  try {
+    await file.makePublic()
+    return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
+  } catch (makePublicError: any) {
+    // If uniform bucket-level access is enabled, use signed URL
+    if (
+      makePublicError?.code === 400 &&
+      makePublicError?.message?.includes("uniform bucket-level access")
+    ) {
+      const [signedUrl] = await file.getSignedUrl({
+        action: "read",
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+      })
+      return signedUrl
+    }
+    // Fallback to public URL format
+    return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
+  }
 }
 
 /**
@@ -65,24 +97,5 @@ export async function uploadFileToGCS(
     },
   })
 
-  // Try to make file public, fallback to signed URL
-  try {
-    await file.makePublic()
-    return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
-  } catch (makePublicError: any) {
-    // If uniform bucket-level access is enabled, use signed URL
-    if (
-      makePublicError?.code === 400 &&
-      makePublicError?.message?.includes("uniform bucket-level access")
-    ) {
-      const [signedUrl] = await file.getSignedUrl({
-        action: "read",
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-      })
-      return signedUrl
-    }
-    // Fallback to public URL format
-    return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
-  }
+  return getFileUrl(fileName, file)
 }
-

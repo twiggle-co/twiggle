@@ -6,7 +6,6 @@ import {
   Upload,
   FilePlus2,
   FileOutput,
-  Bot,
   Plus,
   ChevronDown,
   ChevronRight,
@@ -29,13 +28,13 @@ import {
 import { DragEvent } from "react"
 import { requestCanvasNode, type CanvasNodeKind } from "@/lib/canvasActions"
 
-type NodeItem = {
+interface NodeItem {
   id: CanvasNodeKind
   label: string
   icon: React.ComponentType<{ className?: string }>
 }
 
-type Category = {
+interface Category {
   id: string
   label: string
   nodes: NodeItem[]
@@ -76,21 +75,30 @@ const categories: Category[] = [
   },
 ]
 
+/**
+ * Handle drag start for node items
+ */
 function onDragStart(event: DragEvent<HTMLButtonElement>, nodeType: CanvasNodeKind) {
   event.dataTransfer.setData("application/reactflow", nodeType)
   event.dataTransfer.effectAllowed = "move"
 }
 
+/**
+ * Handle quick add for node items
+ */
 function onQuickAdd(nodeType: CanvasNodeKind) {
   requestCanvasNode(nodeType)
 }
 
-type CollapsibleCategoryProps = {
+interface CollapsibleCategoryProps {
   category: Category
   isOpen: boolean
   onToggle: () => void
 }
 
+/**
+ * Collapsible category component
+ */
 function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategoryProps) {
   return (
     <div className="space-y-2">
@@ -136,6 +144,10 @@ function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategory
   )
 }
 
+/**
+ * Leaflet sidebar component
+ * Displays draggable node categories for the canvas
+ */
 export function LeafletSidebar() {
   const [openCategories, setOpenCategories] = useState<Set<string>>(
     new Set(categories.map((c) => c.id))
@@ -176,4 +188,3 @@ export function LeafletSidebar() {
     </div>
   )
 }
-

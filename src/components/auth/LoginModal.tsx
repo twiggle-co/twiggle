@@ -9,6 +9,10 @@ interface LoginModalProps {
   onClose: () => void
 }
 
+/**
+ * Login modal component
+ * Supports Google OAuth and email/password (if configured)
+ */
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,8 +33,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       return
     }
     
-    console.log("Attempting login with:", email, "password: ***")
-    
     try {
       const result = await signIn("credentials", {
         username: email,
@@ -39,17 +41,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         callbackUrl: "/dashboard",
       })
       
-      console.log("SignIn result:", result)
-      
       if (result?.error) {
-        console.error("Login error:", result.error)
         alert("Login failed: " + result.error)
       } else if (result?.ok) {
-        console.log("Login successful, redirecting to dashboard")
-        onClose()
-        window.location.href = "/dashboard"
-      } else {
-        console.warn("Unexpected signIn result:", result)
         onClose()
         window.location.href = "/dashboard"
       }
@@ -60,7 +54,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   }
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    // Only track if clicking directly on the backdrop
     if (e.target === backdropRef.current) {
       mouseDownRef.current = {
         target: e.target,
@@ -70,10 +63,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   }
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    // Only close if:
-    // 1. Click target is the backdrop itself (not a child)
-    // 2. Mouse was pressed and released on the backdrop (not a drag/selection)
-    // 3. No text is currently selected
     const selection = window.getSelection()
     const hasSelection = selection !== null && selection.toString().length > 0
     
@@ -93,7 +82,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       onMouseDown={handleBackdropMouseDown}
       onClick={handleBackdropClick}
     >
-      {/* Backdrop with blur */}
+      {/* Backdrop */}
       <div ref={backdropRef} className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
       
       {/* Modal */}
@@ -105,17 +94,18 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-black hover:text-gray-600 transition-colors"
+          aria-label="Close modal"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="m-5 p-8">
-          {/* Continue with Google button */}
+          {/* Google Sign In */}
           <button
             onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-400 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer mb-4"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -141,7 +131,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <span className="text-black text-sm">or</span>
           </div>
 
-          {/* Email and Password form */}
+          {/* Email/Password Form */}
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div>
               <label className="block text-black text-xs font-medium mb-1">
@@ -153,6 +143,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-100 rounded border-none text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder=""
+                required
               />
             </div>
 
@@ -166,6 +157,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-100 rounded border-none text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder=""
+                required
               />
             </div>
 
@@ -200,4 +192,3 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     </div>
   )
 }
-

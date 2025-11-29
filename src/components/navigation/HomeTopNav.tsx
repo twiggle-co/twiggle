@@ -2,27 +2,26 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Leaf, User } from "lucide-react"
+import { Leaf } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { LoginModal } from "@/components/auth/LoginModal"
 
+/**
+ * Home page top navigation
+ */
 export function HomeTopNav() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const { data: session } = useSession()
 
-  const handleLogoClick = () => {
-    window.location.href = "/"
-  }
-
   return (
     <>
       <div className="h-18 bg-[#7BA4F4] text-white flex items-center justify-between px-6">
-        <button onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black">
-            <Leaf className="h-5 w-5" color="#7BA4F4" strokeWidth={2.5}/>
+            <Leaf className="h-5 w-5" color="#7BA4F4" strokeWidth={2.5} />
           </div>
           <span className="font-mono text-xl hover:underline ml-1">Twiggle</span>
-        </button>
+        </Link>
 
         <div className="flex items-center gap-4">
           {session ? (
@@ -32,13 +31,11 @@ export function HomeTopNav() {
               title={session?.user?.email || "User"}
             >
               {session.user?.image && (
-                <div className="flex justify-center">
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || "User"}
-                    className="rounded-full border-2 border-white"
-                  />
-                </div>
+                <img
+                  src={session.user.image}
+                  alt={session.user.name || "User"}
+                  className="h-10 w-10 rounded-full border-2 border-white"
+                />
               )}
             </Link>
           ) : (
@@ -56,4 +53,3 @@ export function HomeTopNav() {
     </>
   )
 }
-

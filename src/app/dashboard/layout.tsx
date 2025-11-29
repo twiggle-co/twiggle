@@ -1,5 +1,9 @@
 import { DashboardSidebar } from "@/components/sidebar/DashboardSidebar"
 
+/**
+ * Dashboard layout
+ * Includes sidebar navigation
+ */
 export default function DashboardLayout({
   children,
 }: {
@@ -14,4 +18,3 @@ export default function DashboardLayout({
     </div>
   )
 }
-

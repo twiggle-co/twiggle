@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma"
 import { uploadJsonToGCS, downloadJsonFromGCS, BUCKET_NAME } from "@/lib/gcs"
 import { v4 as uuidv4 } from "uuid"
 
+/**
+ * Create empty workflow structure
+ */
 function createEmptyWorkflow(project: { createdAt: Date; updatedAt: Date }) {
   return {
     nodes: [],
@@ -16,11 +19,18 @@ function createEmptyWorkflow(project: { createdAt: Date; updatedAt: Date }) {
   }
 }
 
+/**
+ * Extract file name from storage URL
+ */
 function extractFileNameFromUrl(url: string): string | null {
   const match = url.match(new RegExp(`${BUCKET_NAME}/([^?]+)`))
   return match ? match[1] : null
 }
 
+/**
+ * GET /api/projects/[id]/workflow
+ * Get workflow data for a project
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -64,6 +74,10 @@ export async function GET(
   }
 }
 
+/**
+ * POST /api/projects/[id]/workflow
+ * Save workflow data for a project
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -77,6 +91,7 @@ export async function POST(
     const body = await request.json()
     const { nodes, edges, metadata } = body
 
+    // Validate workflow data
     if (!Array.isArray(nodes) || !Array.isArray(edges)) {
       return NextResponse.json(
         { error: "Invalid workflow data: nodes and edges must be arrays" },

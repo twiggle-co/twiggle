@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { requireAuth, getStorageUsageResponse, handleApiError } from "@/lib/api-utils"
 
+/**
+ * GET /api/storage
+ * Get storage usage for the authenticated user
+ */
 export async function GET() {
   try {
     const session = await requireAuth()

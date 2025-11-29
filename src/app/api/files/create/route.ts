@@ -4,6 +4,10 @@ import { requireAuth, verifyProjectAccess, checkStorageLimit, handleApiError } f
 import { prisma } from "@/lib/prisma"
 import { getMimeType, generateStorageFileName, uploadFileToGCS } from "@/lib/file-utils"
 
+/**
+ * POST /api/files/create
+ * Create an empty file
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth()
@@ -11,6 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { fileName: originalFileName, fileType, projectId } = body
 
+    // Validate input
     if (!originalFileName || !fileType) {
       return NextResponse.json(
         { error: "File name and file type are required" },

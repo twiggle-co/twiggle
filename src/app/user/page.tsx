@@ -4,23 +4,26 @@ import { useSession } from "next-auth/react"
 import { LoginButton } from "@/components/auth/LoginButton"
 import { HomeTopNav } from "@/components/navigation/HomeTopNav"
 
+/**
+ * User profile page
+ */
 export default function UserPage() {
   const { data: session, status } = useSession()
 
   return (
     <div className="h-screen w-screen flex flex-col">
       <HomeTopNav />
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
         {status === "loading" ? (
-          <div>Loading...</div>
+          <div className="text-gray-600">Loading...</div>
         ) : !session ? (
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
+            <h1 className="text-2xl font-bold mb-4 text-gray-900">Please sign in</h1>
             <LoginButton />
           </div>
         ) : (
           <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
-            <h1 className="text-2xl font-bold mb-6">User Profile</h1>
+            <h1 className="text-2xl font-bold mb-6 text-gray-900">User Profile</h1>
             <div className="space-y-4">
               {session.user?.image && (
                 <div className="flex justify-center">

@@ -1,91 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Storage } from "@google-cloud/storage"
 import { v4 as uuidv4 } from "uuid"
 import { auth } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
-
-// Initialize Google Cloud Storage client using environment variables
-function getStorageInstance(): Storage {
-  const config: {
-    projectId?: string
-    keyFilename?: string
-    credentials?: object
-  } = {
-    projectId: process.env.GCS_PROJECT_ID,
-  }
-
-  // Option 1: Use key file path from environment variable
-  if (process.env.GCS_KEY_FILENAME) {
-    config.keyFilename = process.env.GCS_KEY_FILENAME
-    console.log("Using GCS_KEY_FILENAME for authentication")
-    return new Storage(config)
-  }
-
-  // Option 2: Use credentials JSON from environment variable
-  if (process.env.GCS_CREDENTIALS) {
-    let credentialsString = process.env.GCS_CREDENTIALS.trim()
-
-    // Try parsing as JSON first
-    let parsedCredentials: any = null
-    try {
-      parsedCredentials = JSON.parse(credentialsString)
-    } catch (parseError) {
-      // If direct parse fails, try base64 decode
-      try {
-        const decoded = Buffer.from(credentialsString, "base64").toString("utf8")
-        if (decoded.trim().startsWith("{")) {
-          parsedCredentials = JSON.parse(decoded.trim())
-        } else {
-          throw parseError
-        }
-      } catch (base64Error) {
-        // Replace escaped newlines and try again
-        credentialsString = credentialsString.replace(/\\n/g, "\n")
-        try {
-          parsedCredentials = JSON.parse(credentialsString)
-        } catch (finalError) {
-          const errorMsg = parseError instanceof Error ? parseError.message : "Unknown error"
-          throw new Error(
-            `Failed to parse GCS_CREDENTIALS: ${errorMsg}. ` +
-            `Ensure GCS_CREDENTIALS in .env.local is valid JSON. ` +
-            `For multi-line JSON, escape newlines as \\n or use base64 encoding.`
-          )
-        }
-      }
-    }
-
-    // Validate required fields
-    if (
-      !parsedCredentials.type ||
-      !parsedCredentials.project_id ||
-      !parsedCredentials.private_key ||
-      !parsedCredentials.client_email
-    ) {
-      throw new Error(
-        "GCS_CREDENTIALS is missing required fields. " +
-        "Ensure it contains: type, project_id, private_key, and client_email."
-      )
-    }
-
-    config.credentials = parsedCredentials
-    
-    // Use project_id from credentials if not set separately
-    if (!config.projectId && parsedCredentials.project_id) {
-      config.projectId = parsedCredentials.project_id
-    }
-
-    console.log("Using GCS_CREDENTIALS for authentication")
-    return new Storage(config)
-  }
-
-  // No credentials found
-  throw new Error(
-    "No Google Cloud Storage credentials found. " +
-    "Please set either GCS_KEY_FILENAME or GCS_CREDENTIALS in your .env.local file."
-  )
-}
-
-const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
+import { getStorageInstance, BUCKET_NAME } from "@/lib/gcs"
 const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024 // 1GB
 
 export async function POST(request: NextRequest) {
@@ -240,13 +157,12 @@ export async function POST(request: NextRequest) {
     let errorMessage = "Failed to upload file"
     let statusCode = 500
 
-    if (error?.message?.includes("No Google Cloud Storage credentials")) {
+    if (error?.message?.includes("No Google Cloud Storage credentials") || 
+        error?.message?.includes("GCS_CREDENTIALS") ||
+        error?.message?.includes("GCS_KEY_FILENAME")) {
       errorMessage =
         "Google Cloud Storage credentials are not configured. " +
-        "Please set GCS_CREDENTIALS or GCS_KEY_FILENAME in your .env.local file."
-      statusCode = 500
-    } else if (error?.message?.includes("Failed to parse GCS_CREDENTIALS")) {
-      errorMessage = error.message
+        "Please set GCS_CREDENTIALS or GCS_KEY_FILENAME in your environment variables."
       statusCode = 500
     } else if (error?.code === 403 || error?.response?.status === 403) {
       errorMessage =

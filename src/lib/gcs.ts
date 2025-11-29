@@ -79,7 +79,15 @@ export function getStorageInstance(): Storage {
   )
 }
 
-export const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
+// Get bucket name from environment variable (required)
+const BUCKET_NAME_ENV = process.env.GCS_BUCKET_NAME
+if (!BUCKET_NAME_ENV) {
+  throw new Error(
+    "GCS_BUCKET_NAME environment variable is required. " +
+    "Please set GCS_BUCKET_NAME in your .env.local file."
+  )
+}
+export const BUCKET_NAME: string = BUCKET_NAME_ENV
 
 /**
  * Upload JSON data to Google Cloud Storage

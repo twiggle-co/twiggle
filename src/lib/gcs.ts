@@ -121,6 +121,23 @@ export function getStorageInstance(): Storage {
     if (error?.message?.includes("No Google Cloud Storage credentials")) {
       throw error
     }
+    
+    // Check for OpenSSL decoder errors (Node.js 17+ compatibility issue)
+    if (
+      error?.code === "ERR_OSSL_UNSUPPORTED" ||
+      error?.message?.includes("DECODER routines") ||
+      error?.message?.includes("1E08010C") ||
+      error?.message?.includes("0308010C")
+    ) {
+      throw new Error(
+        "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
+        "Please set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables. " +
+        "Go to: Vercel Dashboard → Your Project → Settings → Environment Variables → Add NODE_OPTIONS with value '--openssl-legacy-provider'. " +
+        "Then redeploy your application. " +
+        `Original error: ${error?.message || String(error)}`
+      )
+    }
+    
     throw new Error(
       `Failed to initialize Google Cloud Storage: ${error?.message || error}`
     )
@@ -189,6 +206,23 @@ export async function uploadJsonToGCS(
     return storageUrl
   } catch (error: any) {
     console.error("Error uploading JSON to GCS:", error)
+    
+    // Check for OpenSSL decoder errors (Node.js 17+ compatibility issue)
+    if (
+      error?.code === "ERR_OSSL_UNSUPPORTED" ||
+      error?.message?.includes("DECODER routines") ||
+      error?.message?.includes("1E08010C") ||
+      error?.message?.includes("0308010C")
+    ) {
+      throw new Error(
+        "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
+        "Please set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables. " +
+        "Go to: Vercel Dashboard → Your Project → Settings → Environment Variables → Add NODE_OPTIONS with value '--openssl-legacy-provider'. " +
+        "Then redeploy your application. " +
+        `Original error: ${error?.message || String(error)}`
+      )
+    }
+    
     throw error
   }
 }

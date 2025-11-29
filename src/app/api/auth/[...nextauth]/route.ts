@@ -18,7 +18,13 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        console.log("[DEBUG] Credentials authorize called with:", {
+          username: credentials?.username,
+          hasPassword: !!credentials?.password,
+        })
+
         if (!credentials?.username || !credentials?.password) {
+          console.log("[DEBUG] Missing credentials")
           return null
         }
 
@@ -28,29 +34,42 @@ export const authOptions = {
           (credentials.username === "admin" || credentials.username === "admin@test.com") &&
           credentials.password === "123456"
 
+        console.log("[DEBUG] Is admin user:", isAdminUser)
+
         if (isAdminUser) {
-          // Find or create the test user
-          let user = await prisma.user.findUnique({
-            where: { email: "admin@test.com" },
-          })
-
-          if (!user) {
-            user = await prisma.user.create({
-              data: {
-                name: "Admin",
-                email: "admin@test.com",
-                emailVerified: new Date(),
-              },
+          try {
+            // Find or create the test user
+            let user = await prisma.user.findUnique({
+              where: { email: "admin@test.com" },
             })
-          }
 
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
+            if (!user) {
+              console.log("[DEBUG] Creating new admin user")
+              user = await prisma.user.create({
+                data: {
+                  name: "Admin",
+                  email: "admin@test.com",
+                  emailVerified: new Date(),
+                },
+              })
+            } else {
+              console.log("[DEBUG] Found existing admin user:", user.id)
+            }
+
+            const userData = {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+            }
+            console.log("[DEBUG] Returning user data:", { ...userData, id: userData.id })
+            return userData
+          } catch (error) {
+            console.error("[DEBUG] Error in authorize:", error)
+            return null
           }
         }
 
+        console.log("[DEBUG] Invalid credentials")
         return null
       },
     }),
@@ -64,6 +83,13 @@ export const authOptions = {
         session.user.id = user.id
       }
       return session
+    },
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      // Allow relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allow callback URLs on the same origin
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
   },
   session: {

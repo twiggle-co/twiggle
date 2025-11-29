@@ -70,12 +70,13 @@ export function getStorageInstance(): Storage {
       let privateKey = parsedCredentials.private_key.trim()
       
       // Handle multiple escape scenarios:
-      // 1. Escaped newlines: \\n -> \n
-      // 2. Literal \n strings: \n -> \n (if already single escaped)
-      // 3. Remove any trailing/leading whitespace
+      // 1. Double-escaped newlines: \\\\n -> \n (when stored in env vars, \\ becomes \\\\)
+      // 2. Escaped newlines: \\n -> \n (standard escaping)
+      // 3. Literal \n strings: \n -> \n (if already single escaped)
+      // Process in order to handle all cases
       privateKey = privateKey
-        .replace(/\\n/g, "\n")  // Replace \\n with actual newline
-        .replace(/\\\\n/g, "\n") // Handle double-escaped newlines
+        .replace(/\\\\n/g, "\n")  // Handle double-escaped newlines first
+        .replace(/\\n/g, "\n")    // Then handle single-escaped newlines
         .trim()
       
       // Ensure proper PEM format with newlines
@@ -93,7 +94,8 @@ export function getStorageInstance(): Storage {
         throw new Error(
           "GCS_CREDENTIALS private_key appears to be malformed. " +
           "The private_key must contain 'BEGIN PRIVATE KEY' and 'END PRIVATE KEY' markers. " +
-          "If storing in environment variables, ensure newlines are escaped as \\n or use base64 encoding for the entire JSON."
+          "If storing in environment variables, ensure newlines are escaped as \\n or use base64 encoding for the entire JSON. " +
+          "See docs/setup/google-cloud-storage.md for setup instructions."
         )
       }
       
@@ -105,7 +107,19 @@ export function getStorageInstance(): Storage {
       if (beginIndex === -1 || endIndex === -1 || endIndex <= beginIndex) {
         throw new Error(
           "GCS_CREDENTIALS private_key format is invalid. " +
-          "The key must have 'BEGIN PRIVATE KEY' before 'END PRIVATE KEY' with the key content in between."
+          "The key must have 'BEGIN PRIVATE KEY' before 'END PRIVATE KEY' with the key content in between. " +
+          "See docs/setup/google-cloud-storage.md for setup instructions."
+        )
+      }
+      
+      // Additional validation: ensure the key has actual content between markers
+      const keyContent = keyLines.slice(beginIndex + 1, endIndex).join("\n").trim()
+      if (!keyContent || keyContent.length < 100) {
+        throw new Error(
+          "GCS_CREDENTIALS private_key appears to be incomplete. " +
+          "The key content between BEGIN and END markers seems too short. " +
+          "Ensure the entire private key was copied correctly. " +
+          "See docs/setup/google-cloud-storage.md for setup instructions."
         )
       }
       

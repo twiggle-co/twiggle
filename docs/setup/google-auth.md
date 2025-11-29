@@ -197,6 +197,71 @@ This error occurs when the redirect URI in your request doesn't match what's con
    - Clear your browser cache/cookies
    - Try signing in again
 
+### ConnectTimeoutError / UND_ERR_CONNECT_TIMEOUT
+
+This error occurs when NextAuth cannot connect to Google's OAuth token endpoint to exchange the authorization code for tokens.
+
+**Symptoms:**
+- Error: `ConnectTimeoutError` or `UND_ERR_CONNECT_TIMEOUT`
+- Error: `TypeError: fetch failed`
+- OAuth callback takes 10+ seconds and then fails
+
+**Possible Causes:**
+
+1. **Network/Firewall Blocking Outbound HTTPS:**
+   - Corporate firewalls or network restrictions may block connections to `oauth2.googleapis.com`
+   - Check if your network allows outbound HTTPS connections to Google's servers
+
+2. **Proxy Configuration Needed:**
+   - If you're behind a corporate proxy, you may need to configure Node.js to use it
+   - Set environment variables:
+     ```env
+     HTTP_PROXY=http://proxy.company.com:8080
+     HTTPS_PROXY=http://proxy.company.com:8080
+     ```
+
+3. **DNS Resolution Issues:**
+   - Test if you can resolve Google's OAuth endpoint:
+     ```bash
+     # Test DNS resolution
+     nslookup oauth2.googleapis.com
+     # Test connectivity
+     curl -I https://oauth2.googleapis.com/token
+     ```
+
+4. **VPN/Network Restrictions:**
+   - If using a VPN, try disconnecting and testing
+   - Some VPNs may block or interfere with OAuth token requests
+
+**Solutions:**
+
+1. **Check Network Connectivity:**
+   ```bash
+   # Test if you can reach Google's OAuth endpoint
+   curl -v https://oauth2.googleapis.com/token
+   ```
+
+2. **Configure Proxy (if needed):**
+   - Add proxy environment variables to your `.env.local` or system environment
+   - Restart your development server after adding proxy settings
+
+3. **Try Different Network:**
+   - Test from a different network (e.g., mobile hotspot) to rule out network-specific issues
+   - If it works on a different network, the issue is with your current network configuration
+
+4. **Check Firewall/Antivirus:**
+   - Temporarily disable firewall/antivirus to test if they're blocking the connection
+   - If it works, add exceptions for Node.js and `oauth2.googleapis.com`
+
+5. **Increase Timeout (already configured):**
+   - The code now includes a 30-second timeout for token requests
+   - If your network is slow, this may help, but the root cause should be addressed
+
+**For Production (Vercel):**
+- This error is less common in production as Vercel's servers have good connectivity
+- If it occurs in production, check Vercel function logs for more details
+- Verify that Vercel's IP ranges aren't blocked by any security policies
+
 ## Related Documentation
 
 - [Database Setup](./database-setup.md) - Database configuration

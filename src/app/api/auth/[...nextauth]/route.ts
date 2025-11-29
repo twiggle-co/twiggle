@@ -9,6 +9,10 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Add timeout configuration for token requests
+      httpOptions: {
+        timeout: 30000, // 30 seconds timeout
+      },
     }),
   ],
   pages: {
@@ -26,6 +30,8 @@ export const authOptions = {
   session: {
     strategy: "database" as const,
   },
+  // Add debug logging in development
+  debug: process.env.NODE_ENV === "development",
 }
 
 const { handlers, auth } = NextAuth(authOptions)

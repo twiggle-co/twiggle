@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { X } from "lucide-react"
 import { signIn } from "next-auth/react"
 
@@ -12,6 +12,8 @@ interface LoginModalProps {
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const mouseDownRef = useRef<{ target: EventTarget | null; time: number } | null>(null)
 
   if (!isOpen) return null
 
@@ -25,13 +27,42 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     console.log("Email sign in:", email, password)
   }
 
+  const handleBackdropMouseDown = (e: React.MouseEvent) => {
+    // Only track if clicking directly on the backdrop
+    if (e.target === backdropRef.current) {
+      mouseDownRef.current = {
+        target: e.target,
+        time: Date.now(),
+      }
+    }
+  }
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Only close if:
+    // 1. Click target is the backdrop itself (not a child)
+    // 2. Mouse was pressed and released on the backdrop (not a drag/selection)
+    // 3. No text is currently selected
+    const selection = window.getSelection()
+    const hasSelection = selection !== null && selection.toString().length > 0
+    
+    if (
+      e.target === backdropRef.current &&
+      mouseDownRef.current?.target === backdropRef.current &&
+      !hasSelection
+    ) {
+      onClose()
+    }
+    mouseDownRef.current = null
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={onClose}
+      onMouseDown={handleBackdropMouseDown}
+      onClick={handleBackdropClick}
     >
       {/* Backdrop with blur */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+      <div ref={backdropRef} className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
       
       {/* Modal */}
       <div
@@ -88,7 +119,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-100 rounded border-none focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full px-3 py-2 bg-gray-100 rounded border-none text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder=""
               />
             </div>
@@ -101,7 +132,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-100 rounded border-none focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full px-3 py-2 bg-gray-100 rounded border-none text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder=""
               />
             </div>

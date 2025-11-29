@@ -25,12 +25,6 @@ npm run dev
 3. Name it and select region
 4. Copy the connection string (shown after creation)
 
-### Option B: Neon (Alternative)
-
-1. Sign up at [neon.tech](https://neon.tech)
-2. Create a project (database auto-created)
-3. Copy the connection string from dashboard
-
 ## Step 2: Configure Environment Variables
 
 Create a `.env.local` file in your project root:
@@ -506,16 +500,6 @@ const users = await prisma.user.findMany({
 **"Database does not exist"**
 - Verify database name in connection string
 - Check if database was created in the correct region
-
-## Provider Comparison
-
-| Feature | Vercel Postgres | Neon |
-|---------|----------------|------|
-| Free Storage | 256MB | 10GB |
-| Setup | Built into Vercel | Separate signup |
-| Best For | Simple, integrated | More storage, flexibility |
-
-Both work identically with Prisma - just change `DATABASE_URL`.
 
 ## Related Documentation
 

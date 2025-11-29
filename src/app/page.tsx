@@ -5,191 +5,100 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { ReactFlow, Background, Controls, applyNodeChanges, applyEdgeChanges, BackgroundVariant, ReactFlowProvider, useReactFlow, type Node, type Edge, Handle, Position } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-// Twiggle features
-const projectMessages = [
-  "Visual workflow builder with drag-and-drop interface",
-  "Connect files, agents, and tools in an intuitive canvas",
-  "Upload and store files seamlessly with Google Cloud Storage",
-  "Preview and edit files in interactive popout windows",
-  "Create and organize projects with 'leaflets' system",
-  "Link nodes together to build powerful automation workflows",
-  "Real-time collaboration and project synchronization",
-  "Secure authentication with Google OAuth integration",
-  "Node-based architecture for flexible workflow design",
-  "Cloud storage integration for easy file management",
-  "Interactive canvas with zoom, pan, and fit-to-view controls",
-  "Extensible platform supporting multiple file types and formats",
-]
+// Letters for TWIGGLE game
+const TWIGGLE_LETTERS = ['T', 'W', 'I', 'G', 'G', 'L', 'E'] as const
 
-// Custom node component with project introduction text
-function ProjectNode({ data }: { data: { label: string; message: string } }) {
+// Custom node component displaying a letter
+function LetterNode({ data }: { data: { letter: string; index: number } }) {
   return (
-    <div className="px-4 py-3 bg-white rounded-lg shadow-md border-2 border-blue-500 min-w-[200px] max-w-[250px]">
-      <Handle type="target" position={Position.Top} />
-      <div className="text-center">
-        <div className="text-xs font-semibold text-blue-600 mb-2">{data.label}</div>
-        <div className="text-xs text-gray-700 leading-relaxed">{data.message}</div>
-      </div>
-      <Handle type="source" position={Position.Bottom} />
+    <div className="w-16 h-16 bg-white rounded-lg shadow-md border-2 border-blue-500 flex items-center justify-center">
+      <Handle type="target" position={Position.Left} />
+      <div className="text-3xl font-bold text-blue-600">{data.letter}</div>
+      <Handle type="source" position={Position.Right} />
     </div>
   )
 }
 
 const nodeTypes = {
-  projectNode: ProjectNode,
+  letterNode: LetterNode,
 }
 
-// Helper function to check if two line segments intersect
-function doLinesIntersect(
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  p3: { x: number; y: number },
-  p4: { x: number; y: number }
-): boolean {
-  const d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x)
-  if (d === 0) return false
-
-  const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d
-  const u = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d
-
-  return t > 0 && t < 1 && u > 0 && u < 1
-}
-
-// Generate a puzzle with nodes and edges
-function generatePuzzle(): { nodes: Node[]; edges: Edge[] } {
-  const nodeCount = Math.floor(Math.random() * 4) + 5 // Random between 3 and 6
+// Generate TWIGGLE game with 7 nodes in random positions
+function generateTwiggleGame(): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
-  // Shuffle project messages
-  const shuffledMessages = [...projectMessages].sort(() => Math.random() - 0.5).slice(0, nodeCount)
+  // Create 7 nodes with letters from TWIGGLE in random positions
+  const minDistance = 200 // Minimum distance between nodes
+  const positions: { x: number; y: number }[] = []
 
-  // Create nodes in a circle initially (will be scrambled)
-  const radius = 150
-  const centerX = 0
-  const centerY = 0
+  for (let i = 0; i < TWIGGLE_LETTERS.length; i++) {
+    let x = 0
+    let y = 0
+    let attempts = 0
+    let validPosition = false
 
-  for (let i = 0; i < nodeCount; i++) {
-    const angle = (2 * Math.PI * i) / nodeCount
-    const x = centerX + radius * Math.cos(angle) + (Math.random() - 0.5) * 100
-    const y = centerY + radius * Math.sin(angle) + (Math.random() - 0.5) * 100
+    // Try to find a position that's not too close to existing nodes
+    while (!validPosition && attempts < 50) {
+      x = (Math.random() - 0.5) * 800 // Random x between -400 and 400
+      y = (Math.random() - 0.5) * 600 // Random y between -300 and 300
+
+      // Check if position is far enough from existing nodes
+      validPosition = positions.every(pos => {
+        const distance = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2))
+        return distance >= minDistance
+      })
+
+      attempts++
+    }
+
+    // If we couldn't find a good position, use a fallback
+    if (!validPosition) {
+      const angle = (2 * Math.PI * i) / TWIGGLE_LETTERS.length
+      const radius = 200
+      x = radius * Math.cos(angle)
+      y = radius * Math.sin(angle)
+    }
+
+    positions.push({ x, y })
 
     nodes.push({
-      id: `n${i + 1}`,
-      type: 'projectNode',
+      id: `letter-${i}`,
+      type: 'letterNode',
       position: { x, y },
-      data: { 
-        label: `Node ${i + 1}`,
-        message: shuffledMessages[i] || projectMessages[i % projectMessages.length]
+      data: {
+        letter: TWIGGLE_LETTERS[i],
+        index: i,
       },
       draggable: true,
     })
   }
 
-  // Create edges that form a solvable puzzle
-  // Connect nodes in a way that creates crossings when scrambled
-  const connections: number[][] = []
-  
-  // Generate connections based on node count
-  // For each node, connect to a few other nodes to create interesting puzzles
-  for (let i = 0; i < nodeCount; i++) {
-    // Connect to 2-3 other nodes
-    const numConnections = nodeCount <= 3 ? 2 : Math.floor(Math.random() * 2) + 2
-    const connected = new Set<number>()
-    
-    while (connected.size < numConnections) {
-      const target = Math.floor(Math.random() * nodeCount)
-      if (target !== i && !connected.has(target)) {
-        connected.add(target)
-        // Avoid duplicate connections
-        const exists = connections.some(([from, to]) => 
-          (from === i && to === target) || (from === target && to === i)
-        )
-        if (!exists) {
-          connections.push([i, target])
-        }
-      }
-    }
-  }
-
-  connections.forEach(([from, to], idx) => {
+  // Create edges connecting letters in order: T -> W -> I -> G -> G -> L -> E
+  for (let i = 0; i < TWIGGLE_LETTERS.length - 1; i++) {
     edges.push({
-      id: `e${idx + 1}`,
-      source: `n${from + 1}`,
-      target: `n${to + 1}`,
+      id: `edge-${i}`,
+      source: `letter-${i}`,
+      target: `letter-${i + 1}`,
       style: { stroke: '#3b82f6', strokeWidth: 2 },
     })
-  })
+  }
 
   return { nodes, edges }
 }
 
-function UntangleGame() {
+function TwiggleGame() {
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const { fitView } = useReactFlow()
 
-  // Initialize puzzle on mount and generate new one each time
+  // Initialize game on mount
   useEffect(() => {
-    const puzzle = generatePuzzle()
-    setNodes(puzzle.nodes)
-    setEdges(puzzle.edges)
+    const game = generateTwiggleGame()
+    setNodes(game.nodes)
+    setEdges(game.edges)
     setTimeout(() => fitView({ padding: 0.2 }), 100)
-  }, []) // Empty dependency array means it runs once on mount (new puzzle on refresh)
-
-  // Check for edge crossings
-  const crossingEdges = useMemo(() => {
-    const crossings: Set<string> = new Set()
-    
-    for (let i = 0; i < edges.length; i++) {
-      for (let j = i + 1; j < edges.length; j++) {
-        const edge1 = edges[i]
-        const edge2 = edges[j]
-
-        // Get node positions
-        const node1 = nodes.find(n => n.id === edge1.source)
-        const node2 = nodes.find(n => n.id === edge1.target)
-        const node3 = nodes.find(n => n.id === edge2.source)
-        const node4 = nodes.find(n => n.id === edge2.target)
-
-        if (!node1 || !node2 || !node3 || !node4) continue
-
-        // Check if edges share a node (they can't cross if they share a node)
-        if (
-          edge1.source === edge2.source ||
-          edge1.source === edge2.target ||
-          edge1.target === edge2.source ||
-          edge1.target === edge2.target
-        ) {
-          continue
-        }
-
-        const p1 = { x: node1.position.x, y: node1.position.y }
-        const p2 = { x: node2.position.x, y: node2.position.y }
-        const p3 = { x: node3.position.x, y: node3.position.y }
-        const p4 = { x: node4.position.x, y: node4.position.y }
-
-        if (doLinesIntersect(p1, p2, p3, p4)) {
-          crossings.add(edge1.id)
-          crossings.add(edge2.id)
-        }
-      }
-    }
-
-    return crossings
-  }, [nodes, edges])
-
-  // Update edge colors based on crossings
-  const styledEdges = useMemo(() => {
-    return edges.map(edge => ({
-      ...edge,
-      style: {
-        ...edge.style,
-        stroke: crossingEdges.has(edge.id) ? '#ef4444' : '#3b82f6',
-        strokeWidth: 2,
-      },
-    }))
-  }, [edges, crossingEdges])
+  }, [fitView])
 
   const onNodesChange = useCallback(
     (changes: any) => {
@@ -207,7 +116,7 @@ function UntangleGame() {
     <div className="relative w-full h-full">
       <ReactFlow
         nodes={nodes}
-        edges={styledEdges}
+        edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -217,7 +126,13 @@ function UntangleGame() {
         elementsSelectable={false}
       >
         <Background id="1" gap={20} color="#404040" variant={BackgroundVariant.Dots} />
-        <Controls />
+        <Controls 
+          style={{
+            backgroundColor: 'rgba(123, 164, 244, 0.7)',
+            borderRadius: '8px',
+            border: '1px solid rgba(123, 164, 244, 0.1)',
+          }}
+        />
       </ReactFlow>
     </div>
   )
@@ -229,7 +144,7 @@ export default function HomePage() {
       <HomeTopNav />
       <div className="flex-1 relative">
         <ReactFlowProvider>
-          <UntangleGame />
+          <TwiggleGame />
         </ReactFlowProvider>
       </div>
     </div>

@@ -27,10 +27,18 @@ export function LeafletTopNav({ projectName, twigId }: LeafletTopNavProps) {
 
       <Link
         href="/user"
-        className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black"
+        className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black overflow-hidden"
         title={session?.user?.email || "User"}
       >
-        <User className="h-5 w-5" />
+        {session?.user?.image ? (
+          <img
+            src={session.user.image}
+            alt={session.user.name || "User"}
+            className="h-full w-full object-cover rounded-full border-2 border-white"
+          />
+        ) : (
+          <User className="h-5 w-5" />
+        )}
       </Link>
     </div>
   )

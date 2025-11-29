@@ -33,11 +33,11 @@ export default function UserPage() {
               )}
               <div>
                 <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-lg">{session.user?.name || "Not provided"}</p>
+                <p className="text-lg text-gray-700">{session.user?.name || "Not provided"}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="text-lg">{session.user?.email || "Not provided"}</p>
+                <p className="text-lg text-gray-700">{session.user?.email || "Not provided"}</p>
               </div>
               <div className="pt-4">
                 <LoginButton />

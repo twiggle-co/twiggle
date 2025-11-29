@@ -2,21 +2,29 @@
 
 import { useCallback, useRef, useState, useEffect } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
-import { UploadCloud, FileText, X as CloseIcon, PlusIcon } from "lucide-react"
+import { UploadCloud, FileText, X as CloseIcon, PlusIcon, Plus, ChevronDown } from "lucide-react"
 
 import type { TwiggleNode } from "../types"
 import { useDraggableWindow } from "./hooks/useDraggableWindow"
 import { PreviewWindow } from "./PreviewWindow"
 
 export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
+  // Extract nodeType from id if not in data (backward compatibility)
+  const nodeType = data.nodeType || (id.split('-').slice(0, -1).join('-') as typeof data.nodeType)
+  
   const [showPreview, setShowPreview] = useState(false)
   const [showConfirmRemove, setShowConfirmRemove] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [fileContent, setFileContent] = useState<string>("")
   const [isUploading, setIsUploading] = useState(false)
   const [isLoadingContent, setIsLoadingContent] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prevShowPreviewRef = useRef(false)
+  
+  // For file-create node
+  const [fileName, setFileName] = useState(data.fileName || "")
+  const [fileType, setFileType] = useState(data.fileType || "Markdown (.md)")
   
   // Window management hook
   const {
@@ -91,6 +99,39 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
         return `Error loading file: ${error instanceof Error ? error.message : "Unknown error"}`
       } finally {
         setIsLoadingContent(false)
+      }
+    },
+    []
+  )
+
+  // Create file in Google Cloud Storage
+  const createFileInGCS = useCallback(
+    async (fileName: string, fileType: string) => {
+      setIsCreating(true)
+      try {
+        const response = await fetch("/api/files/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileName,
+            fileType,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to create file")
+        }
+
+        const result = await response.json()
+        return result
+      } catch (error) {
+        console.error("Error creating file:", error)
+        throw error
+      } finally {
+        setIsCreating(false)
       }
     },
     []
@@ -281,7 +322,101 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
             </div>
           )}
 
-          {data.kind === "file" && !fileInfo && !showConfirmRemove && (
+          {/* File-create node custom UI */}
+          {data.kind === "file" && nodeType === "file-create" && !showConfirmRemove && (
+            <div className="nodrag space-y-5 relative">
+              {/* Name Input */}
+              <div className="relative">
+                {/* <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Name:
+                </label> */}
+                <input
+                  type="text"
+                  value={fileName}
+                  onChange={(e) => setFileName(e.target.value)}
+                  placeholder="Enter file name"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7BA4F4] focus:border-transparent transition-all text-sm shadow-sm hover:border-gray-400"
+                />
+              </div>
+
+              {/* Type Dropdown */}
+              <div className="relative">
+                {/* <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Type:
+                </label> */}
+                <select
+                  value={fileType}
+                  onChange={(e) => setFileType(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-[#7BA4F4] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7BA4F4] focus:ring-offset-2 focus:ring-offset-white text-sm appearance-none cursor-pointer pr-10 shadow-sm hover:brightness-110 transition-all"
+                >
+                  <option value="Markdown (.md)">Markdown (.md)</option>
+                  <option value="Text (.txt)">Text (.txt)</option>
+                  <option value="JSON (.json)">JSON (.json)</option>
+                  <option value="CSV (.csv)">CSV (.csv)</option>
+                  <option value="YAML (.yaml)">YAML (.yaml)</option>
+                  <option value="HTML (.html)">HTML (.html)</option>
+                  <option value="XML (.xml)">XML (.xml)</option>
+                  <option value="TOML (.toml)">TOML (.toml)</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-[0.8rem] w-4 h-4 text-white pointer-events-none" />
+              </div>
+
+              {/* Create Button */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  className={`nodrag mx-auto flex items-center justify-center rounded-full bg-[#7BA4F4] px-8 py-2.5 text-white text-sm font-semibold shadow-md transition-all ${
+                    fileName.trim()
+                      ? "hover:bg-[#6a94e3] hover:shadow-lg active:scale-[0.98]"
+                      : "opacity-50 cursor-not-allowed"
+                  }`}
+                  onClick={async () => {
+                    // Handle create file action
+                    if (fileName.trim() && !isCreating) {
+                      try {
+                        const createResult = await createFileInGCS(fileName, fileType)
+                        
+                        // Store file metadata with storage information
+                        const fileMeta = {
+                          name: createResult.fileName,
+                          size: createResult.size,
+                          type: createResult.type,
+                          storageUrl: createResult.storageUrl,
+                          fileId: createResult.fileId,
+                          content: "", // Empty file initially
+                        }
+
+                        if (data.onFileChange) {
+                          data.onFileChange(id, fileMeta)
+                        }
+                        
+                        setFileContent("") // Empty content for new file
+                      } catch (error) {
+                        const errorMsg = `Error creating file: ${error instanceof Error ? error.message : "Unknown error"}`
+                        console.error(errorMsg)
+                        alert(errorMsg) // Show error to user
+                      }
+                    }
+                  }}
+                  disabled={!fileName.trim() || isCreating}
+                >
+                  {isCreating ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* File-output node UI */}
+          {data.kind === "file" && nodeType === "file-output" && !showConfirmRemove && (
+            <div className="nodrag text-center py-4">
+              <FileText className="mx-auto h-12 w-12 text-[#7BA4F4] mb-2" />
+              <p className="text-sm text-gray-600">Output File</p>
+              <p className="text-xs text-gray-400 mt-1">Files will be saved here</p>
+            </div>
+          )}
+
+          {/* File-upload node UI */}
+          {data.kind === "file" && (nodeType === "file-upload" || (!nodeType && !data.fileName)) && !fileInfo && !showConfirmRemove && (
             <div
               className="nodrag rounded-2xl text-center bg-[#F8FBFF]"
               onDrop={handleDrop}
@@ -367,11 +502,15 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
         </>
       )}
 
-      {data.kind !== "file" && ( 
+      {/* Handle logic: file-output has both input and output, others have output only */}
+      {/* Input handle: only file-output and non-file nodes */}
+      {(data.kind !== "file" || nodeType === "file-output") && (
         <Handle type="target" position={Position.Left} style={{width:'16px', height:'16px', background:'#7BA4F4'}} className="flex items-center justify-center cursor-pointer">
           <PlusIcon className="w-4 h-4 text-white" />
         </Handle>
       )}
+      
+      {/* Output handle: all nodes have output */}
       <Handle type="source" position={Position.Right} style={{width:'16px', height:'16px', background:'#7BA4F4'}} className="flex items-center justify-center cursor-pointer">
         <PlusIcon className="w-4 h-4 text-white" />
       </Handle>
@@ -387,7 +526,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       />
 
       {showConfirmRemove && (
-        <div className="relative inset-0 rounded-[28px] bg-white/90 backdrop-blur-[2px] border border-[#F0F2F8] flex flex-col items-center justify-center text-center px-6">
+        <div className="relative inset-0 rounded-[28px] bg-white/90 backdrop-blur-[2px] border border-[#F0F2F8] flex flex-col items-center justify-center text-center px-4">
           <p className="text-sm font-semibold text-gray-700 mb-2">Remove this node?</p>
           <p className="text-xs text-gray-500 mb-4">
             Removing will also delete any connections attached to it.

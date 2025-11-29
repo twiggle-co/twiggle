@@ -140,4 +140,3 @@ GCS_BUCKET_NAME=twiggle-files
 ## Related Documentation
 
 - [Database Setup](./database-setup.md) - Database configuration
-- [Storage Architecture](./storage-architecture.md) - Understanding storage architecture

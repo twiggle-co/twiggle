@@ -17,10 +17,10 @@ export function LoginButton() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-600">
+        {/* <span className="text-sm text-gray-600">
           {session.user?.name || session.user?.email}
-        </span>
-        <Button onClick={() => signOut()} variant="outline">
+        </span> */}
+        <Button onClick={() => signOut({ callbackUrl: "/" })} variant="outline">
           Sign out
         </Button>
       </div>

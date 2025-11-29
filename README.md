@@ -85,13 +85,14 @@ twiggle-frontend/
 
 Required environment variables (see [setup guides](./docs) for details):
 
-- `GCS_PROJECT_ID` - Google Cloud project ID
-- `GCS_CREDENTIALS` or `GCS_KEY_FILENAME` - Google Cloud Storage credentials
-- `GCS_BUCKET_NAME` - Google Cloud Storage bucket name
+- `DATABASE_URL` - PostgreSQL connection string (Vercel Postgres)
 - `NEXTAUTH_URL` - NextAuth.js base URL
 - `NEXTAUTH_SECRET` - NextAuth.js secret key
 - `GOOGLE_CLIENT_ID` - Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `GCS_PROJECT_ID` - Google Cloud project ID (for file storage)
+- `GCS_CREDENTIALS` or `GCS_KEY_FILENAME` - Google Cloud Storage credentials (for file storage)
+- `GCS_BUCKET_NAME` - Google Cloud Storage bucket name (for file storage)
 
 Create a `.env.local` file for local development.
 

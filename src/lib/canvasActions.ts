@@ -1,6 +1,25 @@
 "use client"
 
-export type CanvasNodeKind = "file-upload" | "file-create" | "agent"
+export type CanvasNodeKind =
+  // File Nodes
+  | "file-upload"
+  | "file-create"
+  | "file-output"
+  // Agent / Tool Nodes
+  | "summarize"
+  | "outline-extractor"
+  | "table-extractor"
+  | "data-cleaner"
+  | "chart-generator"
+  | "spreadsheet-writer"
+  | "report-writer"
+  | "section-refiner"
+  | "slide-generator"
+  | "slide-design"
+  | "email-draft"
+  | "follow-up-email"
+  // Utility / Config Nodes
+  | "prompt-template"
 
 export type CanvasAddNodeDetail = {
   kind: CanvasNodeKind

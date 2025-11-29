@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Storage } from "@google-cloud/storage"
-import path from "path"
-import fs from "fs"
 
-// Initialize Google Cloud Storage
-// Supports both keyFilename and credentials from environment variables
-// Falls back to local key file for development if no env vars are set
-function getStorage() {
+// Initialize Google Cloud Storage client using environment variables
+function getStorageInstance(): Storage {
   const config: {
     projectId?: string
     keyFilename?: string
@@ -15,88 +11,81 @@ function getStorage() {
     projectId: process.env.GCS_PROJECT_ID,
   }
 
+  // Option 1: Use key file path from environment variable
   if (process.env.GCS_KEY_FILENAME) {
     config.keyFilename = process.env.GCS_KEY_FILENAME
     console.log("Using GCS_KEY_FILENAME for authentication")
-  } else if (process.env.GCS_CREDENTIALS) {
-    try {
-      const credentialsString = process.env.GCS_CREDENTIALS
-      config.credentials = JSON.parse(credentialsString)
-      console.log("Successfully parsed GCS_CREDENTIALS")
-      
-      // Validate that credentials have required fields
-      const creds = config.credentials as any
-      if (!creds.type || !creds.project_id || !creds.private_key || !creds.client_email) {
-        console.error("GCS_CREDENTIALS is missing required fields")
-        throw new Error("GCS_CREDENTIALS is missing required fields")
-      }
-    } catch (error) {
-      console.error("Error parsing GCS_CREDENTIALS:", error)
-      throw new Error(`Failed to parse GCS_CREDENTIALS: ${error instanceof Error ? error.message : "Unknown error"}`)
-    }
-  } else {
-    // Fallback: Try to use local key file for development
-    // Only check for file in development (not on Vercel/build time)
-    try {
-      const localKeyPath = path.join(process.cwd(), "key", "twiggle-479508-98239b893140.json")
-      if (fs.existsSync(localKeyPath)) {
-        config.keyFilename = localKeyPath
-        console.log("Using local key file for Google Cloud Storage authentication")
-      } else {
-        console.warn(
-          "No GCS credentials configured. Set GCS_KEY_FILENAME, GCS_CREDENTIALS, or place key file at key/twiggle-479508-98239b893140.json"
-        )
-      }
-    } catch (error) {
-      // File system operations may fail in serverless environments
-      console.warn("Could not check for local key file:", error instanceof Error ? error.message : "Unknown error")
-    }
+    return new Storage(config)
   }
 
-  if (!config.projectId) {
-    // Try to get project ID from key file if available
-    if (config.keyFilename) {
+  // Option 2: Use credentials JSON from environment variable
+  if (process.env.GCS_CREDENTIALS) {
+    let credentialsString = process.env.GCS_CREDENTIALS.trim()
+
+    // Try parsing as JSON first
+    let parsedCredentials: any = null
+    try {
+      parsedCredentials = JSON.parse(credentialsString)
+    } catch (parseError) {
+      // If direct parse fails, try base64 decode
       try {
-        if (fs.existsSync(config.keyFilename)) {
-          const keyData = JSON.parse(fs.readFileSync(config.keyFilename, "utf8"))
-          config.projectId = keyData.project_id || config.projectId
+        const decoded = Buffer.from(credentialsString, "base64").toString("utf8")
+        if (decoded.trim().startsWith("{")) {
+          parsedCredentials = JSON.parse(decoded.trim())
+        } else {
+          throw parseError
         }
-      } catch (error) {
-        // Silently fail - project ID may be set via environment variable
-        console.warn("Could not read project ID from key file:", error instanceof Error ? error.message : "Unknown error")
+      } catch (base64Error) {
+        // Replace escaped newlines and try again
+        credentialsString = credentialsString.replace(/\\n/g, "\n")
+        try {
+          parsedCredentials = JSON.parse(credentialsString)
+        } catch (finalError) {
+          const errorMsg = parseError instanceof Error ? parseError.message : "Unknown error"
+          throw new Error(
+            `Failed to parse GCS_CREDENTIALS: ${errorMsg}. ` +
+            `Ensure GCS_CREDENTIALS in .env.local is valid JSON. ` +
+            `For multi-line JSON, escape newlines as \\n or use base64 encoding.`
+          )
+        }
       }
     }
-    
-    // Try to get project ID from credentials if available
-    if (!config.projectId && config.credentials) {
-      const creds = config.credentials as any
-      config.projectId = creds.project_id
+
+    // Validate required fields
+    if (
+      !parsedCredentials.type ||
+      !parsedCredentials.project_id ||
+      !parsedCredentials.private_key ||
+      !parsedCredentials.client_email
+    ) {
+      throw new Error(
+        "GCS_CREDENTIALS is missing required fields. " +
+        "Ensure it contains: type, project_id, private_key, and client_email."
+      )
     }
+
+    config.credentials = parsedCredentials
+    
+    // Use project_id from credentials if not set separately
+    if (!config.projectId && parsedCredentials.project_id) {
+      config.projectId = parsedCredentials.project_id
+    }
+
+    console.log("Using GCS_CREDENTIALS for authentication")
+    return new Storage(config)
   }
 
-  // Validate that we have some form of authentication
-  if (!config.keyFilename && !config.credentials) {
-    const errorMsg = "No Google Cloud Storage credentials found. Please set GCS_CREDENTIALS or GCS_KEY_FILENAME environment variable."
-    console.error(errorMsg)
-    throw new Error(errorMsg)
-  }
-
-  return new Storage(config)
-}
-
-// Lazy initialization to avoid build-time errors on Vercel
-let storage: Storage | null = null
-function getStorageInstance(): Storage {
-  if (!storage) {
-    storage = getStorage()
-  }
-  return storage
+  // No credentials found
+  throw new Error(
+    "No Google Cloud Storage credentials found. " +
+    "Please set either GCS_KEY_FILENAME or GCS_CREDENTIALS in your .env.local file."
+  )
 }
 
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME || "twiggle-files"
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ fileId: string }> }
 ) {
   try {

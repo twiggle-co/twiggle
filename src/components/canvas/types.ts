@@ -1,6 +1,7 @@
 "use client"
 
 import type { Node } from "@xyflow/react"
+import type { CanvasNodeKind } from "@/lib/canvasActions"
 
 export type UploadedFileMeta = {
   name: string
@@ -13,9 +14,12 @@ export type UploadedFileMeta = {
 
 export type TwiggleNodeData = {
   label: string
-  kind: "file" | "agent"
+  kind: "file" | "agent" | "utility"
+  nodeType: CanvasNodeKind // Specific node type identifier
   detail: string
   file?: UploadedFileMeta | null
+  fileName?: string // For file-create nodes
+  fileType?: string // For file-create nodes
   onFileChange?: (nodeId: string, file: UploadedFileMeta | null) => void
   onRemove?: (nodeId: string) => void
 }

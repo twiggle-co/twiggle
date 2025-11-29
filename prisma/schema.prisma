@@ -49,6 +49,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   projects      Project[]
+  files         File[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -71,5 +72,21 @@ model Project {
   updatedAt   DateTime @updatedAt
 
   @@index([ownerId])
+}
+
+model File {
+  id          String   @id @default(cuid())
+  fileId      String   @unique // Unique identifier for the file in storage
+  fileName    String   // Original file name
+  size        BigInt   // File size in bytes
+  type        String   // MIME type
+  storageUrl  String?  // URL to file in Google Cloud Storage
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([fileId])
 }
 

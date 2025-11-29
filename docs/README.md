@@ -27,7 +27,6 @@ Setup guides and documentation for the Twiggle Frontend application.
 
 - **[Storage Setup](./setup/google-cloud-storage.md)** - File uploads and storage
 - **[GitHub Setup](./setup/github.md)** - Version control setup
-- **[Storage Architecture](./setup/storage-architecture.md)** - Understanding storage architecture
 
 ## Troubleshooting
 

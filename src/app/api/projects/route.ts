@@ -86,6 +86,18 @@ export async function POST(request: NextRequest) {
     } catch (gcsError: any) {
       // If GCS upload fails, still return the project (workflow can be created later)
       console.error("Error initializing workflow in GCS:", gcsError)
+      
+      // Check for JWT signature error and provide helpful message
+      if (gcsError?.message?.includes("Invalid JWT Signature") || 
+          gcsError?.error === "invalid_grant") {
+        console.error(
+          "GCS Authentication Error: Invalid JWT Signature. " +
+          "This usually means GCS_CREDENTIALS private_key is malformed. " +
+          "Ensure newlines in private_key are escaped as \\n or use base64 encoding. " +
+          "See docs/setup/FIX_JWT_SIGNATURE_ERROR.md for details."
+        )
+      }
+      
       // Project is already created, so we return it even if workflow init failed
       return NextResponse.json(project, { status: 201 })
     }

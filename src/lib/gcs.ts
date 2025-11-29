@@ -42,8 +42,9 @@ export function getStorageInstance(): Storage {
           const errorMsg = parseError instanceof Error ? parseError.message : "Unknown error"
           throw new Error(
             `Failed to parse GCS_CREDENTIALS: ${errorMsg}. ` +
-            `Ensure GCS_CREDENTIALS in .env.local is valid JSON. ` +
-            `For multi-line JSON, escape newlines as \\n or use base64 encoding.`
+            `Ensure GCS_CREDENTIALS in your environment variables is valid JSON. ` +
+            `For multi-line JSON, escape newlines as \\n or use base64 encoding. ` +
+            `(local: .env.local, Vercel: Project Settings > Environment Variables).`
           )
         }
       }
@@ -62,6 +63,55 @@ export function getStorageInstance(): Storage {
       )
     }
 
+    // Fix private_key: Ensure newlines are properly formatted
+    // When stored in environment variables, newlines in private_key may be escaped as \\n
+    // We need to convert them to actual newlines for the JWT signature to work
+    if (typeof parsedCredentials.private_key === "string") {
+      let privateKey = parsedCredentials.private_key.trim()
+      
+      // Handle multiple escape scenarios:
+      // 1. Escaped newlines: \\n -> \n
+      // 2. Literal \n strings: \n -> \n (if already single escaped)
+      // 3. Remove any trailing/leading whitespace
+      privateKey = privateKey
+        .replace(/\\n/g, "\n")  // Replace \\n with actual newline
+        .replace(/\\\\n/g, "\n") // Handle double-escaped newlines
+        .trim()
+      
+      // Ensure proper PEM format with newlines
+      // The key should have newlines after BEGIN and before END
+      if (!privateKey.includes("\n")) {
+        // If no newlines found, try to add them at common positions
+        privateKey = privateKey
+          .replace(/-----BEGIN PRIVATE KEY-----/, "-----BEGIN PRIVATE KEY-----\n")
+          .replace(/-----END PRIVATE KEY-----/, "\n-----END PRIVATE KEY-----")
+      }
+      
+      // Validate private key format
+      if (!privateKey.includes("BEGIN PRIVATE KEY") || 
+          !privateKey.includes("END PRIVATE KEY")) {
+        throw new Error(
+          "GCS_CREDENTIALS private_key appears to be malformed. " +
+          "The private_key must contain 'BEGIN PRIVATE KEY' and 'END PRIVATE KEY' markers. " +
+          "If storing in environment variables, ensure newlines are escaped as \\n or use base64 encoding for the entire JSON."
+        )
+      }
+      
+      // Final validation: ensure the key looks valid
+      const keyLines = privateKey.split("\n")
+      const beginIndex = keyLines.findIndex((line: string) => line.includes("BEGIN PRIVATE KEY"))
+      const endIndex = keyLines.findIndex((line: string) => line.includes("END PRIVATE KEY"))
+      
+      if (beginIndex === -1 || endIndex === -1 || endIndex <= beginIndex) {
+        throw new Error(
+          "GCS_CREDENTIALS private_key format is invalid. " +
+          "The key must have 'BEGIN PRIVATE KEY' before 'END PRIVATE KEY' with the key content in between."
+        )
+      }
+      
+      parsedCredentials.private_key = privateKey
+    }
+
     config.credentials = parsedCredentials
     
     // Use project_id from credentials if not set separately
@@ -75,7 +125,8 @@ export function getStorageInstance(): Storage {
   // No credentials found
   throw new Error(
     "No Google Cloud Storage credentials found. " +
-    "Please set either GCS_KEY_FILENAME or GCS_CREDENTIALS in your .env.local file."
+    "Please set either GCS_KEY_FILENAME or GCS_CREDENTIALS in your environment variables " +
+    "(local: .env.local, Vercel: Project Settings > Environment Variables)."
   )
 }
 
@@ -84,7 +135,8 @@ const BUCKET_NAME_ENV = process.env.GCS_BUCKET_NAME
 if (!BUCKET_NAME_ENV) {
   throw new Error(
     "GCS_BUCKET_NAME environment variable is required. " +
-    "Please set GCS_BUCKET_NAME in your .env.local file."
+    "Please set GCS_BUCKET_NAME in your environment variables " +
+    "(local: .env.local, Vercel: Project Settings > Environment Variables)."
   )
 }
 export const BUCKET_NAME: string = BUCKET_NAME_ENV

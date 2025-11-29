@@ -27,10 +27,8 @@ Setup guides and documentation for the Twiggle Frontend application.
 
 - **[Storage Setup](./setup/google-cloud-storage.md)** - File uploads and storage
 - **[GitHub Setup](./setup/github.md)** - Version control setup
-
-## Troubleshooting
-
-- [Fix Server Configuration Error](./setup/fix-server-error.md) - Common environment variable issues
+- **[Local Development Setup](./setup/local-setup.md)** - Local development configuration
+- **[Deployment Checklist](./setup/deployment-checklist.md)** - Pre-deployment checklist
 
 ## Project Structure
 

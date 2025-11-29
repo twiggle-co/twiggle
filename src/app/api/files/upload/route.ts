@@ -96,12 +96,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // 2. Get file from request
+    // 2. Get file and projectId from request
     const formData = await request.formData()
     const file = formData.get("file") as File
+    const projectId = formData.get("projectId") as string | null
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    }
+
+    // Validate projectId if provided
+    if (projectId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: projectId,
+          ownerId: session.user.id,
+        },
+      })
+      if (!project) {
+        return NextResponse.json(
+          { error: "Project not found or access denied" },
+          { status: 404 }
+        )
+      }
     }
 
     // 3. Check storage limit
@@ -142,7 +159,12 @@ export async function POST(request: NextRequest) {
     // 4. Prepare file for upload
     const fileId = uuidv4()
     const fileExtension = file.name.split(".").pop() || ""
-    const storageFileName = `${fileId}.${fileExtension}`
+    
+    // Use unified storage structure: workflows/{projectId}/files/{fileId}.{ext}
+    // If no projectId, fall back to old structure for backward compatibility
+    const storageFileName = projectId
+      ? `workflows/${projectId}/files/${fileId}.${fileExtension}`
+      : `${fileId}.${fileExtension}`
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)

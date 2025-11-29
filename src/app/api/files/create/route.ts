@@ -122,13 +122,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { fileName: originalFileName, fileType } = body
+    const { fileName: originalFileName, fileType, projectId } = body
 
     if (!originalFileName || !fileType) {
       return NextResponse.json(
         { error: "File name and file type are required" },
         { status: 400 }
       )
+    }
+
+    // Validate projectId if provided
+    if (projectId) {
+      const project = await prisma.project.findFirst({
+        where: {
+          id: projectId,
+          ownerId: session.user.id,
+        },
+      })
+      if (!project) {
+        return NextResponse.json(
+          { error: "Project not found or access denied" },
+          { status: 404 }
+        )
+      }
     }
 
     // Extract extension from fileType (e.g., "Markdown (.md)" -> ".md")
@@ -178,7 +194,12 @@ export async function POST(request: NextRequest) {
 
     // Generate unique file ID
     const fileId = uuidv4()
-    const storageFileName = `${fileId}${extension}`
+    
+    // Use unified storage structure: workflows/{projectId}/files/{fileId}.{ext}
+    // If no projectId, fall back to old structure for backward compatibility
+    const storageFileName = projectId
+      ? `workflows/${projectId}/files/${fileId}${extension}`
+      : `${fileId}${extension}`
     const mimeType = getMimeType(fileType)
 
     // Create empty file content (user will add content later)

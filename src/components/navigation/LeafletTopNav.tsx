@@ -1,16 +1,33 @@
 "use client"
 
 import Link from "next/link"
-import { Sparkles, User } from "lucide-react"
+import { Sparkles, User, Save, AlertCircle } from "lucide-react"
 import { useSession } from "next-auth/react"
+import { useState } from "react"
 
 type LeafletTopNavProps = {
   projectName?: string
   twigId: string
+  hasUnsavedChanges?: boolean
 }
 
-export function LeafletTopNav({ projectName, twigId }: LeafletTopNavProps) {
+export function LeafletTopNav({ projectName, twigId, hasUnsavedChanges = false }: LeafletTopNavProps) {
   const { data: session } = useSession()
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      // Call the global save function exposed by NodeCanvas
+      if (typeof window !== "undefined" && (window as any).saveWorkflow) {
+        await (window as any).saveWorkflow()
+      }
+    } catch (error) {
+      console.error("Error saving:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="h-18 bg-[#7BA4F4] text-white flex items-center justify-between px-6">
@@ -21,9 +38,30 @@ export function LeafletTopNav({ projectName, twigId }: LeafletTopNavProps) {
         <span className="font-semibold text-xl">Twiggle</span>
       </Link>
 
-      <Link href="/dashboard" className="font-medium text-lg">
-        {projectName ? `My Projects / ${projectName}` : "My Projects"}
-      </Link>
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard" className="font-medium text-lg">
+          {projectName ? `My Projects / ${projectName}` : "My Projects"}
+        </Link>
+        
+        {hasUnsavedChanges && (
+          <div className="flex items-center gap-2 text-yellow-200">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-sm">Unsaved changes</span>
+          </div>
+        )}
+        
+        <button
+          onClick={handleSave}
+          disabled={isSaving || !hasUnsavedChanges}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-[#7BA4F4] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          title={hasUnsavedChanges ? "Save changes" : "All changes saved"}
+        >
+          <Save className="h-4 w-4" />
+          <span className="text-sm font-medium">
+            {isSaving ? "Saving..." : "Save"}
+          </span>
+        </button>
+      </div>
 
       <Link
         href="/user"

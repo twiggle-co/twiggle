@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Background,
   BackgroundVariant,
@@ -131,11 +131,25 @@ const nodeTemplates: Record<DragType, Pick<TwiggleNodeData, "label" | "kind" | "
 
 const nodeTypes: NodeTypes = { twiggleNode: TwiggleNodeCard }
 
-function InnerCanvas() {
+// Autosave interval in milliseconds (30 seconds)
+const AUTOSAVE_INTERVAL = 30000
+
+interface InnerCanvasProps {
+  projectId: string | null
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
+}
+
+function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null)
   const reactFlow = useReactFlow<TwiggleNode, Edge>()
   const [nodes, setNodes, onNodesChange] = useNodesState<TwiggleNode>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [lastSavedHash, setLastSavedHash] = useState<string | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isInitialLoadRef = useRef(true)
 
   const handleRemoveNode = useCallback(
     (nodeId: string) => {
@@ -155,6 +169,7 @@ function InnerCanvas() {
                 data: {
                   ...node.data,
                   file,
+                  projectId: projectId, // Preserve projectId
                   onFileChange: handleFileChange,
                   onRemove: handleRemoveNode,
                 },
@@ -163,8 +178,199 @@ function InnerCanvas() {
         )
       )
     },
-    [handleRemoveNode, setNodes]
+    [handleRemoveNode, setNodes, projectId]
   )
+
+  // Generate a hash of the current workflow state for change detection
+  const generateWorkflowHash = useCallback((nodes: TwiggleNode[], edges: Edge[]): string => {
+    const workflowString = JSON.stringify({
+      nodes: nodes.map((n) => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        data: {
+          label: n.data.label,
+          kind: n.data.kind,
+          nodeType: n.data.nodeType,
+          detail: n.data.detail,
+          file: n.data.file,
+          fileName: n.data.fileName,
+          fileType: n.data.fileType,
+        },
+      })),
+      edges: edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+      })),
+    })
+    // Simple hash function
+    let hash = 0
+    for (let i = 0; i < workflowString.length; i++) {
+      const char = workflowString.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return hash.toString()
+  }, [])
+
+  // Load workflow from API
+  const loadWorkflow = useCallback(async () => {
+    if (!projectId) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/projects/${projectId}/workflow`)
+      if (!response.ok) {
+        throw new Error("Failed to load workflow")
+      }
+
+      const workflowData = await response.json()
+      
+      if (workflowData.nodes && workflowData.edges) {
+        // Restore nodes with proper callbacks
+        const restoredNodes: TwiggleNode[] = workflowData.nodes.map((node: any) => ({
+          ...node,
+          data: {
+            ...node.data,
+            projectId: projectId, // Ensure projectId is set on restored nodes
+            onFileChange: handleFileChange,
+            onRemove: handleRemoveNode,
+          },
+        }))
+
+        setNodes(restoredNodes)
+        setEdges(workflowData.edges || [])
+        
+        // Set initial hash
+        const hash = generateWorkflowHash(restoredNodes, workflowData.edges || [])
+        setLastSavedHash(hash)
+        setHasUnsavedChanges(false)
+      }
+    } catch (error) {
+      console.error("Error loading workflow:", error)
+    } finally {
+      setIsLoading(false)
+      isInitialLoadRef.current = false
+    }
+  }, [projectId, handleFileChange, handleRemoveNode, setNodes, setEdges, generateWorkflowHash])
+
+  // Save workflow to API
+  const saveWorkflow = useCallback(async (silent: boolean = false) => {
+    if (!projectId) return
+
+    if (!silent) {
+      setIsSaving(true)
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/workflow`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nodes,
+          edges,
+          metadata: {},
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to save workflow")
+      }
+
+      // Update saved hash
+      const hash = generateWorkflowHash(nodes, edges)
+      setLastSavedHash(hash)
+      setHasUnsavedChanges(false)
+      
+      if (!silent) {
+        console.log("Workflow saved successfully")
+      }
+    } catch (error) {
+      console.error("Error saving workflow:", error)
+      if (!silent) {
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Failed to save workflow. Please try again."
+        )
+      }
+    } finally {
+      if (!silent) {
+        setIsSaving(false)
+      }
+    }
+  }, [projectId, nodes, edges, generateWorkflowHash])
+
+  // Check for unsaved changes
+  useEffect(() => {
+    if (isInitialLoadRef.current) return
+
+    const currentHash = generateWorkflowHash(nodes, edges)
+    const hasChanges = currentHash !== lastSavedHash
+    setHasUnsavedChanges(hasChanges)
+    
+    if (onUnsavedChangesChange) {
+      onUnsavedChangesChange(hasChanges)
+    }
+
+    // Clear existing autosave timer
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current)
+    }
+
+    // Set up autosave if there are changes
+    if (hasChanges && projectId) {
+      autosaveTimerRef.current = setTimeout(() => {
+        saveWorkflow(true) // Silent autosave
+      }, AUTOSAVE_INTERVAL)
+    }
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current)
+      }
+    }
+  }, [nodes, edges, lastSavedHash, generateWorkflowHash, projectId, saveWorkflow, onUnsavedChangesChange])
+
+  // Load workflow on mount
+  useEffect(() => {
+    if (projectId) {
+      loadWorkflow()
+    }
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current)
+      }
+    }
+  }, [projectId, loadWorkflow])
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ""
+        return ""
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Expose save function globally for manual save
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      ;(window as any).saveWorkflow = () => saveWorkflow(false)
+    }
+  }, [saveWorkflow])
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((prev) => addEdge(connection, prev)),
@@ -187,6 +393,7 @@ function InnerCanvas() {
         data: {
           ...template,
           file: null,
+          projectId: projectId,
           onFileChange: handleFileChange,
           onRemove: handleRemoveNode,
         },
@@ -234,7 +441,22 @@ function InnerCanvas() {
 
   // ReactFlow
   return (
-    <div ref={reactFlowWrapperRef} className="flex-1 bg-[#C9D9F8]">
+    <div ref={reactFlowWrapperRef} className="flex-1 bg-[#C9D9F8] relative">
+      {isLoading && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white px-4 py-2 rounded-lg shadow-lg">
+          <span className="text-sm text-gray-700">Loading workflow...</span>
+        </div>
+      )}
+      {isSaving && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white px-4 py-2 rounded-lg shadow-lg">
+          <span className="text-sm text-gray-700">Saving...</span>
+        </div>
+      )}
+      {hasUnsavedChanges && !isSaving && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-100 border border-yellow-400 px-4 py-2 rounded-lg shadow-lg">
+          <span className="text-sm text-yellow-800">Unsaved changes</span>
+        </div>
+      )}
       <ReactFlow<TwiggleNode, Edge>
         nodes={nodes}
         edges={edges}
@@ -253,10 +475,15 @@ function InnerCanvas() {
   )
 }
 
-export function NodeCanvas() {
+interface NodeCanvasProps {
+  projectId?: string | null
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
+}
+
+export function NodeCanvas({ projectId = null, onUnsavedChangesChange }: NodeCanvasProps) {
   return (
     <ReactFlowProvider>
-      <InnerCanvas />
+      <InnerCanvas projectId={projectId} onUnsavedChangesChange={onUnsavedChangesChange} />
     </ReactFlowProvider>
   )
 }

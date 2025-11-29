@@ -63,13 +63,14 @@ model VerificationToken {
 }
 
 model Project {
-  id          String   @id @default(cuid())
-  title       String
-  description String?  @default("")
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  description    String?  @default("")
+  workflowDataUrl String? // URL to workflow JSON file in Google Cloud Storage
+  ownerId        String
+  owner          User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([ownerId])
 }

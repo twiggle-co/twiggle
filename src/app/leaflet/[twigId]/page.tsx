@@ -36,12 +36,21 @@ export default function LeafletPage({
     }
   }, [twigId])
 
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
   return (
     <div className="h-screen w-screen flex flex-col">
-      <LeafletTopNav projectName={projectName} twigId={twigId} />
+      <LeafletTopNav 
+        projectName={projectName} 
+        twigId={twigId}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
       <div className="flex flex-1 overflow-hidden">
         <LeafletSidebar />
-        <NodeCanvas />
+        <NodeCanvas 
+          projectId={twigId} 
+          onUnsavedChangesChange={setHasUnsavedChanges}
+        />
       </div>
     </div>
   )

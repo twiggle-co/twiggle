@@ -48,6 +48,9 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       try {
         const formData = new FormData()
         formData.append("file", file)
+        if (data.projectId) {
+          formData.append("projectId", data.projectId)
+        }
 
         const response = await fetch("/api/files/upload", {
           method: "POST",
@@ -117,6 +120,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
           body: JSON.stringify({
             fileName,
             fileType,
+            projectId: data.projectId || null,
           }),
         })
 

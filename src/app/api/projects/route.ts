@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
+import { uploadJsonToGCS } from "@/lib/gcs"
+import { v4 as uuidv4 } from "uuid"
 
 // GET /api/projects - Get all projects for the authenticated user
 export async function GET() {
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Create project first
     const project = await prisma.project.create({
       data: {
         title: title.trim(),
@@ -57,7 +60,35 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(project, { status: 201 })
+    // Initialize empty workflow JSON in GCS
+    try {
+      const workflowData = {
+        nodes: [],
+        edges: [],
+        metadata: {
+          version: "1.0",
+          createdAt: project.createdAt.toISOString(),
+          updatedAt: project.createdAt.toISOString(),
+          projectId: project.id,
+        },
+      }
+
+      const fileName = `workflows/${project.id}/${uuidv4()}.json`
+      const storageUrl = await uploadJsonToGCS(fileName, workflowData)
+
+      // Update project with workflow URL
+      const updatedProject = await prisma.project.update({
+        where: { id: project.id },
+        data: { workflowDataUrl: storageUrl },
+      })
+
+      return NextResponse.json(updatedProject, { status: 201 })
+    } catch (gcsError: any) {
+      // If GCS upload fails, still return the project (workflow can be created later)
+      console.error("Error initializing workflow in GCS:", gcsError)
+      // Project is already created, so we return it even if workflow init failed
+      return NextResponse.json(project, { status: 201 })
+    }
   } catch (error) {
     console.error("Error creating project:", error)
     return NextResponse.json(

@@ -1,33 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
-import { auth } from "@/app/api/auth/[...nextauth]/route"
+import { requireAuth, verifyProjectAccess, checkStorageLimit, handleApiError } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { getStorageInstance, BUCKET_NAME } from "@/lib/gcs"
-
-// Map file type extensions to MIME types
-function getMimeType(fileType: string): string {
-  const extension = fileType.match(/\(\.(\w+)\)/)?.[1] || ""
-  const mimeTypes: Record<string, string> = {
-    md: "text/markdown",
-    txt: "text/plain",
-    json: "application/json",
-    csv: "text/csv",
-    yaml: "text/yaml",
-    yml: "text/yaml",
-    html: "text/html",
-    xml: "application/xml",
-    toml: "text/toml",
-  }
-  return mimeTypes[extension.toLowerCase()] || "text/plain"
-}
+import { getMimeType, generateStorageFileName, uploadFileToGCS } from "@/lib/file-utils"
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const session = await requireAuth()
 
     const body = await request.json()
     const { fileName: originalFileName, fileType, projectId } = body
@@ -39,128 +18,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate projectId if provided
+    // Validate project access if projectId provided
     if (projectId) {
-      const project = await prisma.project.findFirst({
-        where: {
-          id: projectId,
-          ownerId: session.user.id,
-        },
-      })
-      if (!project) {
-        return NextResponse.json(
-          { error: "Project not found or access denied" },
-          { status: 404 }
-        )
-      }
+      await verifyProjectAccess(projectId, session.user.id)
     }
 
-    // Extract extension from fileType (e.g., "Markdown (.md)" -> ".md")
+    // Extract extension and create full file name
     const extensionMatch = fileType.match(/\(\.(\w+)\)/)
     const extension = extensionMatch ? `.${extensionMatch[1]}` : ""
-    
-    // Create full file name with extension
-    const fullFileName = originalFileName.endsWith(extension) 
-      ? originalFileName 
+    const fullFileName = originalFileName.endsWith(extension)
+      ? originalFileName
       : `${originalFileName}${extension}`
 
-    // Check storage limit before creating
-    const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024 // 1GB
-    const existingFiles = await prisma.file.findMany({
-      where: { userId: session.user.id },
-      select: { size: true },
-    })
-    const existingProjects = await prisma.project.findMany({
-      where: { ownerId: session.user.id },
-      select: { title: true, description: true },
-    })
-
-    const currentStorageBytes =
-      existingFiles.reduce((sum, f) => sum + Number(f.size), 0) +
-      existingProjects.reduce(
-        (sum, p) =>
-          sum +
-          Buffer.byteLength(p.title, "utf8") +
-          (p.description ? Buffer.byteLength(p.description, "utf8") : 0),
-        0
-      )
-
-    // For new files, we'll estimate a small initial size (0 bytes since it's empty)
-    // User will add content later
-    const estimatedFileSize = 0
-
-    if (currentStorageBytes + estimatedFileSize > STORAGE_LIMIT_BYTES) {
-      const availableBytes = STORAGE_LIMIT_BYTES - currentStorageBytes
+    // Check storage limit (empty file = 0 bytes)
+    const storageCheck = await checkStorageLimit(session.user.id, 0)
+    if (storageCheck.exceeded) {
       return NextResponse.json(
         {
           error: "Storage limit exceeded",
-          message: `Creating this file would exceed your 1GB storage limit. Available space: ${Math.round((availableBytes / (1024 * 1024)) * 100) / 100} MB`,
+          message: storageCheck.message,
         },
         { status: 413 }
       )
     }
 
-    // Generate unique file ID
+    // Generate file ID and storage path
     const fileId = uuidv4()
-    
-    // Use unified storage structure: workflows/{projectId}/files/{fileId}.{ext}
-    // If no projectId, fall back to old structure for backward compatibility
-    const storageFileName = projectId
-      ? `workflows/${projectId}/files/${fileId}${extension}`
-      : `${fileId}${extension}`
+    const storageFileName = generateStorageFileName(
+      fileId,
+      extension.replace(/^\./, ""),
+      projectId
+    )
     const mimeType = getMimeType(fileType)
 
-    // Create empty file content (user will add content later)
-    const fileContent = ""
-    const buffer = Buffer.from(fileContent, "utf8")
-
-    // Upload to Google Cloud Storage
-    const storageInstance = getStorageInstance()
-    const bucket = storageInstance.bucket(BUCKET_NAME)
-    
-    const [bucketExists] = await bucket.exists()
-    if (!bucketExists) {
-      throw new Error(`Bucket "${BUCKET_NAME}" does not exist or is not accessible`)
-    }
-
-    const fileUpload = bucket.file(storageFileName)
-
-    await fileUpload.save(buffer, {
-      metadata: {
-        contentType: mimeType,
-        metadata: {
-          originalName: fullFileName,
-          createdAt: new Date().toISOString(),
-          isCreated: "true", // Flag to indicate this was created (not uploaded)
-        },
-      },
-    })
-
-    // Try to make the file publicly accessible
-    let storageUrl: string
-    try {
-      await fileUpload.makePublic()
-      storageUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${storageFileName}`
-    } catch (makePublicError: any) {
-      if (makePublicError?.code === 400 && makePublicError?.message?.includes("uniform bucket-level access")) {
-        console.log("Uniform bucket-level access enabled, using signed URL instead")
-        const [signedUrl] = await fileUpload.getSignedUrl({
-          action: "read",
-          expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-        })
-        storageUrl = signedUrl
-      } else {
-        storageUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${storageFileName}`
-        console.warn("Could not make file public, using public URL:", makePublicError?.message)
+    // Upload empty file to GCS
+    const buffer = Buffer.from("", "utf8")
+    const storageUrl = await uploadFileToGCS(
+      storageFileName,
+      buffer,
+      mimeType,
+      {
+        originalName: fullFileName,
+        isCreated: "true",
       }
-    }
+    )
 
     // Save file metadata to database
     await prisma.file.create({
       data: {
         fileId,
         fileName: fullFileName,
-        size: BigInt(0), // Empty file initially
+        size: BigInt(0),
         type: mimeType,
         storageUrl,
         userId: session.user.id,
@@ -174,32 +82,8 @@ export async function POST(request: NextRequest) {
       type: mimeType,
       storageUrl,
     })
-  } catch (error: any) {
-    console.error("Error creating file:", error)
-    
-    let errorMessage = "Failed to create file"
-    let statusCode = 500
-    
-    if (error?.message?.includes("No Google Cloud Storage credentials")) {
-      errorMessage = "Google Cloud Storage credentials are not configured."
-      statusCode = 500
-    } else if (error?.code === 403 || error?.response?.status === 403) {
-      errorMessage = "Permission denied: The service account does not have the required permissions."
-      statusCode = 403
-    } else if (error?.code === 404 || error?.response?.status === 404) {
-      errorMessage = `Bucket "${BUCKET_NAME}" not found.`
-      statusCode = 404
-    } else if (error?.message) {
-      errorMessage = error.message
-    }
-    
-    return NextResponse.json(
-      {
-        error: errorMessage,
-        details: error?.response?.data || error?.message || "Unknown error",
-      },
-      { status: statusCode }
-    )
+  } catch (error) {
+    if (error instanceof NextResponse) return error
+    return handleApiError(error, "Failed to create file")
   }
 }
-

@@ -1,65 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/app/api/auth/[...nextauth]/route"
+import { requireAuth, verifyProjectAccess, handleApiError } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 
-// GET /api/projects/[id] - Get a single project
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth()
     const { id } = await params
-    const session = await auth()
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const project = await prisma.project.findFirst({
-      where: {
-        id,
-        ownerId: session.user.id, // Ensure user can only access their own projects
-      },
-    })
-
-    if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 })
-    }
-
+    const project = await verifyProjectAccess(id, session.user.id)
     return NextResponse.json(project)
   } catch (error) {
-    console.error("Error fetching project:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch project" },
-      { status: 500 }
-    )
+    if (error instanceof NextResponse) return error
+    return handleApiError(error, "Failed to fetch project")
   }
 }
 
-// PATCH /api/projects/[id] - Update a project
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth()
     const { id } = await params
-    const session = await auth()
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Verify project exists and belongs to user
-    const existingProject = await prisma.project.findFirst({
-      where: {
-        id,
-        ownerId: session.user.id,
-      },
-    })
-
-    if (!existingProject) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 })
-    }
+    await verifyProjectAccess(id, session.user.id)
 
     const body = await request.json()
     const { title, description } = body
@@ -79,60 +46,34 @@ export async function PATCH(
     }
 
     const project = await prisma.project.update({
-      where: {
-        id,
-      },
+      where: { id },
       data: updateData,
     })
 
     return NextResponse.json(project)
   } catch (error) {
-    console.error("Error updating project:", error)
-    return NextResponse.json(
-      { error: "Failed to update project" },
-      { status: 500 }
-    )
+    if (error instanceof NextResponse) return error
+    return handleApiError(error, "Failed to update project")
   }
 }
 
-// DELETE /api/projects/[id] - Delete a project
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth()
     const { id } = await params
-    const session = await auth()
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Verify project exists and belongs to user
-    const existingProject = await prisma.project.findFirst({
-      where: {
-        id,
-        ownerId: session.user.id,
-      },
-    })
-
-    if (!existingProject) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 })
-    }
+    await verifyProjectAccess(id, session.user.id)
 
     await prisma.project.delete({
-      where: {
-        id,
-      },
+      where: { id },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting project:", error)
-    return NextResponse.json(
-      { error: "Failed to delete project" },
-      { status: 500 }
-    )
+    if (error instanceof NextResponse) return error
+    return handleApiError(error, "Failed to delete project")
   }
 }
-

@@ -81,6 +81,15 @@ export function getStorageInstance(): Storage {
     return storageInstance
   }
 
+  // Diagnostic: Check if NODE_OPTIONS is set (helps with debugging OpenSSL issues)
+  if (!process.env.NODE_OPTIONS?.includes("openssl-legacy-provider")) {
+    console.warn(
+      "[GCS] WARNING: NODE_OPTIONS does not include --openssl-legacy-provider. " +
+      "This may cause OpenSSL errors with Node.js 17+. " +
+      "Set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables."
+    )
+  }
+
   try {
     const credentials = getCredentials()
 

@@ -13,12 +13,47 @@ const SIGNED_URL_EXPIRY_MS = SIGNED_URL_EXPIRY_DAYS * 24 * 60 * 60 * 1000
 
 /**
  * Normalize private key format for OpenSSL 3.0 compatibility
- * Converts escaped newlines (\n) to actual newlines
+ * Handles various encoding issues that can cause JWT signature errors
  */
 function normalizePrivateKey(credentials: any): any {
   if (credentials && typeof credentials === "object" && credentials.private_key) {
-    // Replace escaped newlines with actual newlines
-    credentials.private_key = credentials.private_key.replace(/\\n/g, "\n")
+    let privateKey = credentials.private_key
+
+    // Replace escaped newlines with actual newlines (handle both \\n and \n)
+    privateKey = privateKey.replace(/\\n/g, "\n")
+    
+    // Remove any trailing/leading whitespace but preserve internal structure
+    privateKey = privateKey.trim()
+    
+    // Ensure the key has proper BEGIN/END markers with newlines
+    if (!privateKey.includes("\n")) {
+      // If no newlines at all, try to add them around the key content
+      // This handles cases where the entire key is on one line
+      privateKey = privateKey.replace(
+        /(-----BEGIN PRIVATE KEY-----)(.*?)(-----END PRIVATE KEY-----)/,
+        "$1\n$2\n$3"
+      )
+    }
+    
+    // Ensure proper formatting: BEGIN marker should be on its own line
+    if (!privateKey.startsWith("-----BEGIN")) {
+      // Find where the key actually starts
+      const beginIndex = privateKey.indexOf("-----BEGIN")
+      if (beginIndex > 0) {
+        privateKey = privateKey.substring(beginIndex)
+      }
+    }
+    
+    // Ensure proper formatting: END marker should be on its own line
+    if (!privateKey.endsWith("-----")) {
+      // Find where the key actually ends
+      const endIndex = privateKey.lastIndexOf("-----END")
+      if (endIndex > 0) {
+        privateKey = privateKey.substring(0, endIndex + "-----END PRIVATE KEY-----".length)
+      }
+    }
+    
+    credentials.private_key = privateKey
   }
   return credentials
 }

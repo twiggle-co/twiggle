@@ -67,20 +67,60 @@ Using HTTP instead of HTTPS can cause:
 | NEXTAUTH_SECRET | ✓ | ✓ | OK |
 | NEXTAUTH_URL | ✓ | ⚠️ HTTP | ⚠️ Should be HTTPS |
 
+### 3. OpenSSL Legacy Provider Error
+
+**Error Message:**
+```
+Error: error:0308010C:digital envelope routines::unsupported
+```
+or
+```
+Error: error:1E08010C:DECODER routines::unsupported
+```
+
+**Problem:**
+This error occurs when using Node.js 17+ with OpenSSL 3.0, which removed support for legacy algorithms. The Google Cloud Storage library may fail when parsing credentials or performing cryptographic operations.
+
+**Solution:**
+Set the `NODE_OPTIONS` environment variable in Vercel to use the legacy OpenSSL provider.
+
+**Steps to Fix:**
+
+1. **In Vercel Dashboard:**
+   - Go to your project → **Settings** → **Environment Variables**
+   - Click **Add New**
+   - Variable name: `NODE_OPTIONS`
+   - Value: `--openssl-legacy-provider`
+   - Apply to: **Production**, **Preview**, and **Development** (select all)
+   - Click **Save**
+
+2. **Redeploy your application:**
+   - The environment variable only takes effect after redeployment
+   - Go to **Deployments** → Click the three dots on the latest deployment → **Redeploy**
+
+**Note:** The `.npmrc` file in the project root already includes this setting for local development, so you don't need to modify your local setup.
+
+**Reference:** [Stack Overflow Solution](https://stackoverflow.com/questions/74797727/error-error0308010cdigital-envelope-routinesunsupported)
+
 ## Next Steps
 
-1. **Fix GCS_CREDENTIALS:**
+1. **Fix OpenSSL Error (Priority):**
+   - Add `NODE_OPTIONS=--openssl-legacy-provider` in Vercel environment variables
+   - Redeploy the application
+
+2. **Fix GCS_CREDENTIALS:**
    - Generate base64-encoded credentials
    - Update in Vercel environment variables
    - Redeploy
 
-2. **Fix NEXTAUTH_URL:**
+3. **Fix NEXTAUTH_URL:**
    - Change to HTTPS in Vercel
    - Update Google OAuth redirect URI
    - Redeploy
 
-3. **Test:**
+4. **Test:**
    - After redeploying, test creating a new project
+   - Test saving workflow data
    - Test Google OAuth login
    - Check Vercel function logs for any remaining errors
 

@@ -181,23 +181,31 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
     [handleRemoveNode, setNodes, projectId]
   )
 
+  // Sanitize nodes for serialization (remove callbacks and other non-serializable data)
+  const sanitizeNodesForSave = useCallback((nodes: TwiggleNode[]) => {
+    return nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: {
+        label: n.data.label,
+        kind: n.data.kind,
+        nodeType: n.data.nodeType,
+        detail: n.data.detail,
+        file: n.data.file,
+        fileName: n.data.fileName,
+        fileType: n.data.fileType,
+        projectId: n.data.projectId, // Keep projectId for reference
+        // Explicitly omit: onFileChange, onRemove (callbacks cannot be serialized)
+      },
+    }))
+  }, [])
+
   // Generate a hash of the current workflow state for change detection
   const generateWorkflowHash = useCallback((nodes: TwiggleNode[], edges: Edge[]): string => {
+    const sanitizedNodes = sanitizeNodesForSave(nodes)
     const workflowString = JSON.stringify({
-      nodes: nodes.map((n) => ({
-        id: n.id,
-        type: n.type,
-        position: n.position,
-        data: {
-          label: n.data.label,
-          kind: n.data.kind,
-          nodeType: n.data.nodeType,
-          detail: n.data.detail,
-          file: n.data.file,
-          fileName: n.data.fileName,
-          fileType: n.data.fileType,
-        },
-      })),
+      nodes: sanitizedNodes,
       edges: edges.map((e) => ({
         id: e.id,
         source: e.source,
@@ -214,7 +222,7 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
       hash = hash & hash // Convert to 32-bit integer
     }
     return hash.toString()
-  }, [])
+  }, [sanitizeNodesForSave])
 
   // Load workflow from API
   const loadWorkflow = useCallback(async () => {
@@ -266,13 +274,16 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
     }
 
     try {
+      // Sanitize nodes before saving (remove callbacks)
+      const sanitizedNodes = sanitizeNodesForSave(nodes)
+      
       const response = await fetch(`/api/projects/${projectId}/workflow`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          nodes,
+          nodes: sanitizedNodes,
           edges,
           metadata: {},
         }),
@@ -305,7 +316,7 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
         setIsSaving(false)
       }
     }
-  }, [projectId, nodes, edges, generateWorkflowHash])
+  }, [projectId, nodes, edges, generateWorkflowHash, sanitizeNodesForSave])
 
   // Check for unsaved changes
   useEffect(() => {

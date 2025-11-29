@@ -2,10 +2,28 @@ import { Storage } from "@google-cloud/storage"
 import path from "path"
 
 /**
+ * Strip surrounding quotes from environment variable values
+ * Handles cases where Vercel or other platforms wrap values in quotes
+ */
+function stripQuotes(value: string | undefined): string | undefined {
+  if (!value) return value
+  const trimmed = value.trim()
+  // Remove surrounding double quotes or single quotes
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1)
+  }
+  return trimmed
+}
+
+/**
  * Get the bucket name from environment variables
+ * Strips quotes if present (common in Vercel)
  */
 export const BUCKET_NAME =
-  process.env.GCS_BUCKET_NAME || "twiggle-files"
+  stripQuotes(process.env.GCS_BUCKET_NAME) || "twiggle-files"
 
 /**
  * Get Google Cloud Storage credentials from environment variables
@@ -16,8 +34,9 @@ export const BUCKET_NAME =
  */
 function getCredentials(): object | string | undefined {
   // Option 1: Credentials from environment variable (base64 or JSON string)
-  if (process.env.GCS_CREDENTIALS) {
-    const credsStr = process.env.GCS_CREDENTIALS.trim()
+  const credentialsEnv = stripQuotes(process.env.GCS_CREDENTIALS)
+  if (credentialsEnv) {
+    const credsStr = credentialsEnv.trim()
 
     // Try parsing as base64 first
     try {
@@ -37,8 +56,9 @@ function getCredentials(): object | string | undefined {
   }
 
   // Option 2: Key file path from environment variable
-  if (process.env.GCS_KEY_FILENAME) {
-    return path.resolve(process.env.GCS_KEY_FILENAME)
+  const keyFilename = stripQuotes(process.env.GCS_KEY_FILENAME)
+  if (keyFilename) {
+    return path.resolve(keyFilename)
   }
 
   // Option 3: Fallback to default key file path
@@ -73,9 +93,10 @@ export function getStorageInstance(): Storage {
       credentials?: object
     } = {}
 
-    // Set project ID if provided
-    if (process.env.GCS_PROJECT_ID) {
-      config.projectId = process.env.GCS_PROJECT_ID
+    // Set project ID if provided (strip quotes if present)
+    const projectId = stripQuotes(process.env.GCS_PROJECT_ID)
+    if (projectId) {
+      config.projectId = projectId
     }
 
     // If credentials is a string, it's a file path

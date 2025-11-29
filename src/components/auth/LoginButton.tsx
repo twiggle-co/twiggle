@@ -28,9 +28,21 @@ export function LoginButton() {
   }
 
   return (
-    <Button onClick={() => signIn("google")}>
-      Sign in with Google
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button onClick={() => signIn("google")}>
+        Sign in with Google
+      </Button>
+      <Button 
+        onClick={() => signIn("credentials", {
+          username: "admin",
+          password: "123456",
+          callbackUrl: "/dashboard"
+        })}
+        variant="outline"
+      >
+        Test Login (Admin)
+      </Button>
+    </div>
   )
 }
 

@@ -65,9 +65,16 @@ export async function POST(request: NextRequest) {
       })
 
       return NextResponse.json(updatedProject, { status: 201 })
-    } catch (gcsError) {
-      // If GCS upload fails, still return the project (workflow can be created later)
-      console.error("Failed to initialize workflow in GCS:", gcsError)
+    } catch (gcsError: any) {
+      // If GCS upload fails, log detailed error but still return the project
+      console.error("Failed to initialize workflow in GCS:", {
+        error: gcsError,
+        message: gcsError?.message,
+        code: gcsError?.code,
+        stack: gcsError?.stack,
+      })
+      
+      // Return project without workflow URL - workflow can be created later
       return NextResponse.json(project, { status: 201 })
     }
   } catch (error) {

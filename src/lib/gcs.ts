@@ -7,14 +7,17 @@ import path from "path"
  */
 function stripQuotes(value: string | undefined): string | undefined {
   if (!value) return value
-  const trimmed = value.trim()
-  // Remove surrounding double quotes or single quotes
-  if (
-    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  let trimmed = value.trim()
+  
+  // Remove surrounding double quotes or single quotes (handle multiple layers)
+  while (
+    ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+     (trimmed.startsWith("'") && trimmed.endsWith("'"))) &&
+    trimmed.length >= 2
   ) {
-    return trimmed.slice(1, -1)
+    trimmed = trimmed.slice(1, -1).trim()
   }
+  
   return trimmed
 }
 
@@ -43,14 +46,15 @@ function getCredentials(): object | string | undefined {
       const decoded = Buffer.from(credsStr, "base64").toString("utf8")
       const parsed = JSON.parse(decoded)
       return parsed
-    } catch {
+    } catch (base64Error) {
       // Not base64, try parsing as JSON string
       try {
         return JSON.parse(credsStr)
-      } catch {
-        throw new Error(
-          "GCS_CREDENTIALS must be valid JSON or base64-encoded JSON"
-        )
+      } catch (jsonError) {
+        const errorMessage = `GCS_CREDENTIALS must be valid JSON or base64-encoded JSON. ` +
+          `JSON parse error: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}. ` +
+          `First 100 chars of credentials: ${credsStr.substring(0, 100)}`
+        throw new Error(errorMessage)
       }
     }
   }

@@ -12,6 +12,18 @@ const SIGNED_URL_EXPIRY_DAYS = 7
 const SIGNED_URL_EXPIRY_MS = SIGNED_URL_EXPIRY_DAYS * 24 * 60 * 60 * 1000
 
 /**
+ * Normalize private key format for OpenSSL 3.0 compatibility
+ * Converts escaped newlines (\n) to actual newlines
+ */
+function normalizePrivateKey(credentials: any): any {
+  if (credentials && typeof credentials === "object" && credentials.private_key) {
+    // Replace escaped newlines with actual newlines
+    credentials.private_key = credentials.private_key.replace(/\\n/g, "\n")
+  }
+  return credentials
+}
+
+/**
  * Get Google Cloud Storage credentials from environment variables
  * Supports:
  * - GCS_CREDENTIALS: JSON string (can be base64-encoded or escaped JSON)
@@ -27,11 +39,13 @@ function getCredentials(): object | string {
     // Try parsing as base64 first
     try {
       const decoded = Buffer.from(credsStr, "base64").toString("utf8")
-      return JSON.parse(decoded)
+      const credentials = JSON.parse(decoded)
+      return normalizePrivateKey(credentials)
     } catch {
       // Not base64, try parsing as JSON string
       try {
-        return JSON.parse(credsStr)
+        const credentials = JSON.parse(credsStr)
+        return normalizePrivateKey(credentials)
       } catch (jsonError) {
         const error = jsonError instanceof Error ? jsonError : new Error(String(jsonError))
         throw new Error(

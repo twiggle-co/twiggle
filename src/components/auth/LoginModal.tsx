@@ -29,12 +29,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       return
     }
     
-    console.log("Attempting login with:", { email, password: "***" })
+    console.log("Attempting login with:", email, "password: ***")
     
     try {
-      // Use email directly as username (credentials provider accepts both)
       const result = await signIn("credentials", {
-        username: email, // Can be "admin@test.com" or "admin"
+        username: email,
         password,
         redirect: false,
         callbackUrl: "/dashboard",
@@ -47,13 +46,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         alert("Login failed: " + result.error)
       } else if (result?.ok) {
         console.log("Login successful, redirecting to dashboard")
-        // Close modal and redirect
         onClose()
-        // Use window.location for a full page reload to ensure session is set
         window.location.href = "/dashboard"
       } else {
         console.warn("Unexpected signIn result:", result)
-        // Still try to redirect if no error
         onClose()
         window.location.href = "/dashboard"
       }

@@ -32,16 +32,6 @@ export function LoginButton() {
       <Button onClick={() => signIn("google")}>
         Sign in with Google
       </Button>
-      <Button 
-        onClick={() => signIn("credentials", {
-          username: "admin",
-          password: "123456",
-          callbackUrl: "/dashboard"
-        })}
-        variant="outline"
-      >
-        Test Login (Admin)
-      </Button>
     </div>
   )
 }

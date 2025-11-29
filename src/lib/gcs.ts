@@ -12,36 +12,26 @@ const SIGNED_URL_EXPIRY_DAYS = 7
 const SIGNED_URL_EXPIRY_MS = SIGNED_URL_EXPIRY_DAYS * 24 * 60 * 60 * 1000
 
 /**
- * OpenSSL error codes that indicate legacy provider is needed
+ * Check if error is a cryptographic/SSL related issue
  */
-const OPENSSL_ERROR_INDICATORS = [
-  "ERR_OSSL_UNSUPPORTED",
-  "DECODER routines",
-  "1E08010C",
-  "0308010C",
-]
-
-/**
- * Check if error is an OpenSSL compatibility issue
- */
-function isOpenSSLError(error: unknown): boolean {
+function isCryptographicError(error: unknown): boolean {
   const err = error as any
   return (
     err?.code === "ERR_OSSL_UNSUPPORTED" ||
-    OPENSSL_ERROR_INDICATORS.some((indicator) =>
-      err?.message?.includes(indicator)
-    )
+    err?.message?.includes("DECODER routines") ||
+    err?.message?.includes("crypto") ||
+    err?.message?.includes("sign")
   )
 }
 
 /**
- * Get OpenSSL error message
+ * Get cryptographic error message
  */
-function getOpenSSLErrorMessage(originalError: unknown): string {
+function getCryptographicErrorMessage(originalError: unknown): string {
   const err = originalError as any
   return (
-    "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
-    "This error occurs when using older cryptographic algorithms. " +
+    "Cryptographic operation failed. This may indicate a compatibility issue with the cryptographic library. " +
+    "Please ensure you're using the latest version of @google-cloud/storage. " +
     `Original error: ${err?.message || String(originalError)}`
   )
 }
@@ -134,8 +124,8 @@ export function getStorageInstance(): Storage {
     storageInstance = new Storage(config)
     return storageInstance
   } catch (error) {
-    if (isOpenSSLError(error)) {
-      throw new Error(getOpenSSLErrorMessage(error))
+    if (isCryptographicError(error)) {
+      throw new Error(getCryptographicErrorMessage(error))
     }
     
     const err = error as Error
@@ -147,18 +137,20 @@ export function getStorageInstance(): Storage {
 
 /**
  * Get file URL (public or signed)
+ * Uses V4 signing for OpenSSL 3.0 compatibility
  */
 async function getFileUrl(fileName: string, file: File): Promise<string> {
   try {
     await file.makePublic()
     return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
   } catch (makePublicError: any) {
-    // If uniform bucket-level access is enabled, use signed URL
+    // If uniform bucket-level access is enabled, use V4 signed URL (OpenSSL 3.0 compatible)
     if (
       makePublicError?.code === 400 &&
       makePublicError?.message?.includes("uniform bucket-level access")
     ) {
       const [signedUrl] = await file.getSignedUrl({
+        version: "v4", // Use V4 signing for OpenSSL 3.0 compatibility
         action: "read",
         expires: Date.now() + SIGNED_URL_EXPIRY_MS,
       })
@@ -213,8 +205,8 @@ export async function uploadJsonToGCS(
   } catch (error) {
     console.error("Error uploading JSON to GCS:", error)
     
-    if (isOpenSSLError(error)) {
-      throw new Error(getOpenSSLErrorMessage(error))
+    if (isCryptographicError(error)) {
+      throw new Error(getCryptographicErrorMessage(error))
     }
     
     throw error

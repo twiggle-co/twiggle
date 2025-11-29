@@ -41,6 +41,7 @@ export function generateStorageFileName(
 
 /**
  * Get file URL (public or signed) from GCS file
+ * Uses V4 signing for OpenSSL 3.0 compatibility
  */
 async function getFileUrl(
   fileName: string,
@@ -50,12 +51,13 @@ async function getFileUrl(
     await file.makePublic()
     return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
   } catch (makePublicError: any) {
-    // If uniform bucket-level access is enabled, use signed URL
+    // If uniform bucket-level access is enabled, use V4 signed URL (OpenSSL 3.0 compatible)
     if (
       makePublicError?.code === 400 &&
       makePublicError?.message?.includes("uniform bucket-level access")
     ) {
       const [signedUrl] = await file.getSignedUrl({
+        version: "v4", // Use V4 signing for OpenSSL 3.0 compatibility
         action: "read",
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
       })

@@ -41,10 +41,7 @@ function getOpenSSLErrorMessage(originalError: unknown): string {
   const err = originalError as any
   return (
     "OpenSSL compatibility error: Node.js 17+ requires the legacy OpenSSL provider. " +
-    "Please set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables. " +
-    "Go to: Vercel Dashboard → Your Project → Settings → Environment Variables → " +
-    "Add NODE_OPTIONS with value '--openssl-legacy-provider'. " +
-    "Then redeploy your application. " +
+    "This error occurs when using older cryptographic algorithms. " +
     `Original error: ${err?.message || String(originalError)}`
   )
 }
@@ -99,15 +96,6 @@ let storageInstance: Storage | null = null
 export function getStorageInstance(): Storage {
   if (storageInstance) {
     return storageInstance
-  }
-
-  // Warn about OpenSSL configuration
-  if (!process.env.NODE_OPTIONS?.includes("openssl-legacy-provider")) {
-    console.warn(
-      "[GCS] WARNING: NODE_OPTIONS does not include --openssl-legacy-provider. " +
-      "This may cause OpenSSL errors with Node.js 17+. " +
-      "Set NODE_OPTIONS=--openssl-legacy-provider in your Vercel environment variables."
-    )
   }
 
   try {

@@ -12,31 +12,6 @@ const SIGNED_URL_EXPIRY_DAYS = 7
 const SIGNED_URL_EXPIRY_MS = SIGNED_URL_EXPIRY_DAYS * 24 * 60 * 60 * 1000
 
 /**
- * Check if error is a cryptographic/SSL related issue
- */
-function isCryptographicError(error: unknown): boolean {
-  const err = error as any
-  return (
-    err?.code === "ERR_OSSL_UNSUPPORTED" ||
-    err?.message?.includes("DECODER routines") ||
-    err?.message?.includes("crypto") ||
-    err?.message?.includes("sign")
-  )
-}
-
-/**
- * Get cryptographic error message
- */
-function getCryptographicErrorMessage(originalError: unknown): string {
-  const err = originalError as any
-  return (
-    "Cryptographic operation failed. This may indicate a compatibility issue with the cryptographic library. " +
-    "Please ensure you're using the latest version of @google-cloud/storage. " +
-    `Original error: ${err?.message || String(originalError)}`
-  )
-}
-
-/**
  * Get Google Cloud Storage credentials from environment variables
  * Supports:
  * - GCS_CREDENTIALS: JSON string (can be base64-encoded or escaped JSON)
@@ -124,10 +99,6 @@ export function getStorageInstance(): Storage {
     storageInstance = new Storage(config)
     return storageInstance
   } catch (error) {
-    if (isCryptographicError(error)) {
-      throw new Error(getCryptographicErrorMessage(error))
-    }
-    
     const err = error as Error
     throw new Error(
       `Failed to initialize Google Cloud Storage: ${err.message || String(error)}`
@@ -204,11 +175,6 @@ export async function uploadJsonToGCS(
     return getFileUrl(fileName, file)
   } catch (error) {
     console.error("Error uploading JSON to GCS:", error)
-    
-    if (isCryptographicError(error)) {
-      throw new Error(getCryptographicErrorMessage(error))
-    }
-    
     throw error
   }
 }

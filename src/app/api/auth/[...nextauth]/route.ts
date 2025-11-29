@@ -9,10 +9,6 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Add timeout configuration for token requests
-      httpOptions: {
-        timeout: 30000, // 30 seconds timeout
-      },
     }),
   ],
   pages: {

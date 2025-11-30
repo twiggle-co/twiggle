@@ -78,6 +78,8 @@ npm run db:studio
 
 Opens at `http://localhost:5555`
 
+**Note:** Prisma Studio reads `DATABASE_URL` from your `.env.local` file (loaded via `dotenv-cli`). The URL is not in `schema.prisma` for Prisma 7 compatibility.
+
 ## Available Commands
 
 - `npm run db:push` - Sync schema to database (development)

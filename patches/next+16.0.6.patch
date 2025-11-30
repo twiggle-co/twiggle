@@ -1,0 +1,129 @@
+diff --git a/node_modules/next/dist/esm/server/image-optimizer.js b/node_modules/next/dist/esm/server/image-optimizer.js
+index 4e5a96e..0c94724 100644
+--- a/node_modules/next/dist/esm/server/image-optimizer.js
++++ b/node_modules/next/dist/esm/server/image-optimizer.js
+@@ -6,7 +6,7 @@ import imageSizeOf from 'next/dist/compiled/image-size';
+ import { detector } from 'next/dist/compiled/image-detector/detector.js';
+ import isAnimated from 'next/dist/compiled/is-animated';
+ import { join } from 'path';
+-import nodeUrl from 'url';
++// Removed nodeUrl import - using WHATWG URL API instead
+ import { getImageBlurSvg } from '../shared/lib/image-blur-svg';
+ import { hasLocalMatch } from '../shared/lib/match-local-pattern';
+ import { hasRemoteMatch } from '../shared/lib/match-remote-pattern';
+@@ -755,7 +755,22 @@ export async function fetchInternalImage(href, _req, _res, handleRequest) {
+             method: _req.method || 'GET',
+             socket: _req.socket
+         });
+-        await handleRequest(mocked.req, mocked.res, nodeUrl.parse(href, true));
++        // Convert WHATWG URL to url.parse() compatible format
++        const base = href.startsWith('/') ? 'http://localhost' : '';
++        const urlObj = new URL(href, base);
++        const parsedUrl = {
++            href: urlObj.href,
++            protocol: urlObj.protocol || null,
++            host: urlObj.host || null,
++            hostname: urlObj.hostname || null,
++            port: urlObj.port || null,
++            pathname: urlObj.pathname || '/',
++            search: urlObj.search || null,
++            hash: urlObj.hash || null,
++            path: urlObj.pathname + urlObj.search,
++            query: Object.fromEntries(urlObj.searchParams)
++        };
++        await handleRequest(mocked.req, mocked.res, parsedUrl);
+         await mocked.res.hasStreamed;
+         if (!mocked.res.statusCode) {
+             Log.error('image response failed for', href, mocked.res.statusCode);
+diff --git a/node_modules/next/dist/esm/server/lib/router-server.js b/node_modules/next/dist/esm/server/lib/router-server.js
+index 25f41e5..8bdf435 100644
+--- a/node_modules/next/dist/esm/server/lib/router-server.js
++++ b/node_modules/next/dist/esm/server/lib/router-server.js
+@@ -2,7 +2,6 @@
+ // This is required before other imports to ensure the require hook is setup.
+ import '../node-environment';
+ import '../require-hook';
+-import url from 'url';
+ import path from 'path';
+ import loadConfig from '../config';
+ import { serveStatic } from '../serve-static';
+@@ -38,6 +37,43 @@ import { blockCrossSite } from './router-utils/block-cross-site';
+ import { traceGlobals } from '../../trace/shared';
+ import { NoFallbackError } from '../../shared/lib/no-fallback-error.external';
+ import { RouterServerContextSymbol, routerServerGlobal } from './router-utils/router-server-context';
++// Helper function to convert WHATWG URL to url.parse() compatible format
++function parseUrlCompat(urlString, parseQueryString = false) {
++    try {
++        // For relative URLs, we need to provide a base
++        const base = urlString.startsWith('/') ? 'http://localhost' : '';
++        const url = new URL(urlString, base);
++        const result = {
++            href: url.href,
++            protocol: url.protocol || null,
++            host: url.host || null,
++            hostname: url.hostname || null,
++            port: url.port || null,
++            pathname: url.pathname || '/',
++            search: url.search || null,
++            hash: url.hash || null,
++            path: url.pathname + url.search,
++            query: parseQueryString ? Object.fromEntries(url.searchParams) : (url.search ? url.search.substring(1) : '')
++        };
++        return result;
++    } catch {
++        // Fallback for invalid URLs
++        const queryMatch = urlString.match(/\?([^#]*)/);
++        const queryString = queryMatch ? queryMatch[1] : '';
++        return {
++            href: urlString,
++            protocol: null,
++            host: null,
++            hostname: null,
++            port: null,
++            pathname: urlString.split('?')[0].split('#')[0] || '/',
++            search: urlString.includes('?') ? '?' + queryString : null,
++            hash: urlString.includes('#') ? '#' + urlString.split('#')[1] : null,
++            path: urlString.split('#')[0],
++            query: parseQueryString ? (queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {}) : queryString
++        };
++    }
++}
+ import { handleChromeDevtoolsWorkspaceRequest, isChromeDevtoolsWorkspaceUrl } from './chrome-devtools-workspace';
+ const debug = setupDebug('next:router-server:main');
+ const isNextFont = (pathname)=>pathname && /\/media\/[^/]+\.(woff|woff2|eot|ttf|otf)$/.test(pathname);
+@@ -222,7 +258,7 @@ export async function initialize(opts) {
+                 } else if (config.assetPrefix && pathHasPrefix(origUrl, config.assetPrefix)) {
+                     req.url = removePathPrefix(origUrl, config.assetPrefix);
+                 }
+-                const parsedUrl = url.parse(req.url || '/');
++                const parsedUrl = parseUrlCompat(req.url || '/');
+                 const hotReloaderResult = await developmentBundler.hotReloader.run(req, res, parsedUrl);
+                 if (hotReloaderResult.finished) {
+                     return hotReloaderResult;
+@@ -320,7 +356,7 @@ export async function initialize(opts) {
+                         'HEAD'
+                     ]);
+                     res.statusCode = 405;
+-                    return await invokeRender(url.parse('/405', true), '/405', handleIndex, {
++                    return await invokeRender(parseUrlCompat('/405', true), '/405', handleIndex, {
+                         invokeStatus: 405
+                     });
+                 }
+@@ -369,7 +405,7 @@ export async function initialize(opts) {
+                         const invokePath = `/${err.statusCode}`;
+                         const invokeStatus = err.statusCode;
+                         res.statusCode = err.statusCode;
+-                        return await invokeRender(url.parse(invokePath, true), invokePath, handleIndex, {
++                        return await invokeRender(parseUrlCompat(invokePath, true), invokePath, handleIndex, {
+                             invokeStatus
+                         });
+                     }
+@@ -438,7 +474,7 @@ export async function initialize(opts) {
+                     console.error(err);
+                 }
+                 res.statusCode = Number(invokeStatus);
+-                return await invokeRender(url.parse(invokePath, true), invokePath, 0, {
++                return await invokeRender(parseUrlCompat(invokePath, true), invokePath, 0, {
+                     invokeStatus: res.statusCode
+                 });
+             } catch (err2) {

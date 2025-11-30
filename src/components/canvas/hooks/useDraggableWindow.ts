@@ -17,14 +17,12 @@ export function useDraggableWindow() {
   const windowRef = useRef<HTMLDivElement>(null)
   const titleBarRef = useRef<HTMLDivElement>(null)
 
-  const getCanvasBounds = useCallback(() => {
-    return {
-      left: SIDEBAR_WIDTH,
-      top: TOPNAV_HEIGHT,
-      width: window.innerWidth - SIDEBAR_WIDTH,
-      height: window.innerHeight - TOPNAV_HEIGHT,
-    }
-  }, [])
+  const getCanvasBounds = () => ({
+    left: SIDEBAR_WIDTH,
+    top: TOPNAV_HEIGHT,
+    width: window.innerWidth - SIDEBAR_WIDTH,
+    height: window.innerHeight - TOPNAV_HEIGHT,
+  })
 
   const handleWindowDragStart = (e: React.MouseEvent) => {
     if (windowState === "maximized" || windowState === "minimized") return
@@ -38,24 +36,24 @@ export function useDraggableWindow() {
     }
   }
 
-  const handleWindowDrag = useCallback((e: MouseEvent) => {
-    if (!isDragging || windowState === "maximized" || windowState === "minimized") return
+  const handleWindowDrag = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging) return
+      const canvasBounds = getCanvasBounds()
+      let newX = e.clientX - dragOffset.x
+      let newY = e.clientY - dragOffset.y
 
-    const newX = e.clientX - dragOffset.x
-    const newY = e.clientY - dragOffset.y
-    const canvasBounds = getCanvasBounds()
+      // Constrain to canvas bounds
+      const maxX = canvasBounds.left + canvasBounds.width - windowSize.width
+      const maxY = canvasBounds.top + canvasBounds.height - windowSize.height
 
-    const finalX = Math.max(
-      canvasBounds.left,
-      Math.min(newX, canvasBounds.left + canvasBounds.width - windowSize.width)
-    )
-    const finalY = Math.max(
-      canvasBounds.top,
-      Math.min(newY, canvasBounds.top + canvasBounds.height - windowSize.height)
-    )
+      newX = Math.max(canvasBounds.left, Math.min(newX, maxX))
+      newY = Math.max(canvasBounds.top, Math.min(newY, maxY))
 
-    setWindowPosition({ x: finalX, y: finalY })
-  }, [isDragging, dragOffset, windowState, windowSize, getCanvasBounds])
+      setWindowPosition({ x: newX, y: newY })
+    },
+    [isDragging, dragOffset, windowSize, getCanvasBounds]
+  )
 
   const handleWindowDragEnd = useCallback(() => {
     setIsDragging(false)
@@ -63,111 +61,85 @@ export function useDraggableWindow() {
 
   const handleResizeStart = (e: React.MouseEvent, direction: string) => {
     if (windowState === "maximized" || windowState === "minimized") return
-    e.preventDefault()
     e.stopPropagation()
     setIsResizing(true)
     setResizeDirection(direction)
-    setResizeStart({
-      x: e.clientX,
-      y: e.clientY,
-      width: windowSize.width,
-      height: windowSize.height,
-      windowX: windowPosition.x,
-      windowY: windowPosition.y,
-    })
+    const rect = windowRef.current?.getBoundingClientRect()
+    if (rect) {
+      setResizeStart({
+        x: e.clientX,
+        y: e.clientY,
+        width: rect.width,
+        height: rect.height,
+        windowX: rect.left,
+        windowY: rect.top,
+      })
+    }
   }
 
-  const handleResize = useCallback((e: MouseEvent) => {
-    if (!isResizing || windowState === "maximized" || windowState === "minimized") return
+  const handleResize = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return
+      const canvasBounds = getCanvasBounds()
+      const deltaX = e.clientX - resizeStart.x
+      const deltaY = e.clientY - resizeStart.y
 
-    const deltaX = e.clientX - resizeStart.x
-    const deltaY = e.clientY - resizeStart.y
-    const canvasBounds = getCanvasBounds()
-    
-    let newWidth = resizeStart.width
-    let newHeight = resizeStart.height
-    let newX = resizeStart.windowX
-    let newY = resizeStart.windowY
+      let newWidth = resizeStart.width
+      let newHeight = resizeStart.height
+      let newX = resizeStart.windowX
+      let newY = resizeStart.windowY
 
-    // Handle horizontal resizing
-    if (resizeDirection.includes("e")) {
-      const maxWidth = canvasBounds.left + canvasBounds.width - resizeStart.windowX
-      newWidth = Math.min(
-        Math.max(300, resizeStart.width + deltaX),
-        maxWidth
-      )
-    } else if (resizeDirection.includes("w")) {
-      const maxWidthChange = resizeStart.windowX - canvasBounds.left
-      const minWidthChange = resizeStart.width - 300
-      const widthChange = Math.max(-minWidthChange, Math.min(deltaX, maxWidthChange))
-      
-      newWidth = resizeStart.width - widthChange
-      newX = resizeStart.windowX + widthChange
-      
-      if (newX < canvasBounds.left) {
-        newWidth = newWidth - (canvasBounds.left - newX)
-        newX = canvasBounds.left
+      const MIN_WIDTH = 300
+      const MIN_HEIGHT = 200
+
+      // Handle resize based on direction
+      if (resizeDirection.includes("e")) {
+        newWidth = Math.max(MIN_WIDTH, Math.min(resizeStart.width + deltaX, canvasBounds.width - (newX - canvasBounds.left)))
       }
-    }
-
-    // Handle vertical resizing
-    if (resizeDirection.includes("s")) {
-      const maxHeight = canvasBounds.top + canvasBounds.height - resizeStart.windowY
-      newHeight = Math.min(
-        Math.max(200, resizeStart.height + deltaY),
-        maxHeight
-      )
-    } else if (resizeDirection.includes("n")) {
-      const maxHeightChange = resizeStart.windowY - canvasBounds.top
-      const minHeightChange = resizeStart.height - 200
-      const heightChange = Math.max(-minHeightChange, Math.min(deltaY, maxHeightChange))
-      
-      newHeight = resizeStart.height - heightChange
-      newY = resizeStart.windowY + heightChange
-      
-      if (newY < canvasBounds.top) {
-        newHeight = newHeight - (canvasBounds.top - newY)
-        newY = canvasBounds.top
+      if (resizeDirection.includes("w")) {
+        newWidth = Math.max(MIN_WIDTH, Math.min(resizeStart.width - deltaX, canvasBounds.width - (canvasBounds.left + canvasBounds.width - (newX + resizeStart.width))))
+        newX = resizeStart.windowX + resizeStart.width - newWidth
       }
-    }
+      if (resizeDirection.includes("s")) {
+        newHeight = Math.max(MIN_HEIGHT, Math.min(resizeStart.height + deltaY, canvasBounds.height - (newY - canvasBounds.top)))
+      }
+      if (resizeDirection.includes("n")) {
+        newHeight = Math.max(MIN_HEIGHT, Math.min(resizeStart.height - deltaY, canvasBounds.height - (canvasBounds.top + canvasBounds.height - (newY + resizeStart.height))))
+        newY = resizeStart.windowY + resizeStart.height - newHeight
+      }
 
-    // Final validation
-    newWidth = Math.max(300, newWidth)
-    newHeight = Math.max(200, newHeight)
-    
-    newX = Math.max(canvasBounds.left, Math.min(newX, canvasBounds.left + canvasBounds.width - newWidth))
-    newY = Math.max(canvasBounds.top, Math.min(newY, canvasBounds.top + canvasBounds.height - newHeight))
-    
-    newWidth = Math.min(newWidth, canvasBounds.width)
-    newHeight = Math.min(newHeight, canvasBounds.height)
+      // Constrain position and size to canvas bounds
+      const maxX = canvasBounds.left + canvasBounds.width - newWidth
+      const maxY = canvasBounds.top + canvasBounds.height - newHeight
 
-    setWindowSize({ width: newWidth, height: newHeight })
-    setWindowPosition({ x: newX, y: newY })
-  }, [isResizing, resizeDirection, resizeStart, windowState, getCanvasBounds])
+      newX = Math.max(canvasBounds.left, Math.min(newX, maxX))
+      newY = Math.max(canvasBounds.top, Math.min(newY, maxY))
+
+      // Ensure window doesn't exceed canvas bounds
+      if (newX + newWidth > canvasBounds.left + canvasBounds.width) {
+        newWidth = canvasBounds.left + canvasBounds.width - newX
+      }
+      if (newY + newHeight > canvasBounds.top + canvasBounds.height) {
+        newHeight = canvasBounds.top + canvasBounds.height - newY
+      }
+
+      setWindowSize({ width: newWidth, height: newHeight })
+      setWindowPosition({ x: newX, y: newY })
+    },
+    [isResizing, resizeDirection, resizeStart, getCanvasBounds]
+  )
 
   const handleResizeEnd = useCallback(() => {
     setIsResizing(false)
-    setResizeDirection("")
   }, [])
 
   const handleMaximize = useCallback(() => {
-    const canvasBounds = getCanvasBounds()
     if (windowState === "maximized") {
       setWindowState("normal")
-      setWindowSize({ width: 600, height: 400 })
-      setWindowPosition({
-        x: canvasBounds.left + (canvasBounds.width - 600) / 2,
-        y: canvasBounds.top + (canvasBounds.height - 400) / 2,
-      })
-    } else if (windowState === "minimized") {
-      setWindowState("normal")
-      setWindowSize({ width: 600, height: 400 })
-      setWindowPosition({
-        x: canvasBounds.left + (canvasBounds.width - 600) / 2,
-        y: canvasBounds.top + (canvasBounds.height - 400) / 2,
-      })
+      // Could restore previous size/position here
     } else {
       setWindowState("maximized")
+      const canvasBounds = getCanvasBounds()
       setWindowSize({
         width: canvasBounds.width,
         height: canvasBounds.height,

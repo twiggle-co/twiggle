@@ -48,3 +48,18 @@ body {
   fill: white !important;
   stroke: white !important;
 }
+
+@keyframes slideDownFadeIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-slide-in {
+  animation: slideDownFadeIn 0.3s ease-out;
+}

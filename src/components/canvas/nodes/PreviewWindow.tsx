@@ -49,7 +49,7 @@ export function PreviewWindow({
         windowState === "minimized" ? "h-12 overflow-hidden" : ""
       } ${windowState === "maximized" ? "rounded-none" : "rounded-3xl"}`}
       style={{
-        borderColor: colors.gray + '80',
+        borderColor: colors.gray + "80",
         left: `${windowPosition.x}px`,
         top: `${windowPosition.y}px`,
         width: `${windowSize.width}px`,
@@ -63,8 +63,8 @@ export function PreviewWindow({
         className={`flex items-center justify-between px-4 border-b ${
           windowState === "maximized" ? "rounded-none" : "rounded-t-3xl"
         } ${windowState === "minimized" ? "border-b-0" : ""}`}
-        style={{ 
-          borderColor: colors.gray + '60',
+        style={{
+          borderColor: colors.gray + "60",
           backgroundColor: colors.background,
           cursor: windowState === "maximized" || windowState === "minimized" ? "default" : "grab",
           userSelect: "none",
@@ -102,9 +102,9 @@ export function PreviewWindow({
           <button
             type="button"
             className="nodrag text-gray-400 p-1"
-            style={{ color: 'inherit' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = colors.secondary}
-            onMouseLeave={(e) => e.currentTarget.style.color = ''}
+            style={{ color: "inherit" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = colors.secondary)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             onClick={(e) => {
               e.stopPropagation()
               onClose()
@@ -124,7 +124,7 @@ export function PreviewWindow({
             className="w-full h-full px-4 py-4 text-sm font-mono text-gray-800 bg-white border-0 resize-none focus:outline-none focus:ring-0 nodrag"
             value={fileContent}
             onChange={(e) => onContentChange(e.target.value)}
-            style={{ 
+            style={{
               overflow: "auto",
               whiteSpace: "pre",
               wordWrap: "normal",

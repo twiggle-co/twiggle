@@ -26,6 +26,7 @@ export type CanvasAddNodeDetail = {
 }
 
 export const CANVAS_ADD_NODE_EVENT = "twiggle:add-node"
+export const CANVAS_FILE_WARNING_EVENT = "twiggle:file-warning"
 
 export function requestCanvasNode(kind: CanvasNodeKind) {
   if (typeof window === "undefined") return
@@ -34,6 +35,14 @@ export function requestCanvasNode(kind: CanvasNodeKind) {
     new CustomEvent<CanvasAddNodeDetail>(CANVAS_ADD_NODE_EVENT, {
       detail: { kind },
     })
+  )
+}
+
+export function showFileWarning() {
+  if (typeof window === "undefined") return
+
+  window.dispatchEvent(
+    new CustomEvent(CANVAS_FILE_WARNING_EVENT)
   )
 }
 

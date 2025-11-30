@@ -167,12 +167,11 @@ export function LeafletSidebar() {
   }
 
   return (
-    <div className="w-64 border-r border-gray-200 p-4 flex flex-col gap-6" style={{ backgroundColor: colors.background }}>
+    <div className="w-64 border-r border-gray-200 p-4 flex flex-col gap-6 bg-white">
       <div className="relative">
         <input
           placeholder="Search"
-          className="w-full px-8 py-2 rounded-full shadow-sm text-sm focus:outline-none placeholder:text-gray-400"
-          style={{ backgroundColor: colors.gray }}
+          className="w-full px-8 py-2 rounded-full shadow-sm text-sm focus:outline-none placeholder:text-gray-400 bg-white border border-gray-300"
         />
         <Search className="absolute left-3 top-[9px] h-4 w-4 text-gray-500" />
       </div>

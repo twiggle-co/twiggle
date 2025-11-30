@@ -34,7 +34,7 @@ export function ProjectCard({ id, title, description, updatedAt }: ProjectCardPr
   return (
     <Link
       href={`/leaflet/${id}`}
-      className="group block bg-white rounded-lg border border-gray-200 hover:border-[#118ab2] hover:shadow-md transition-all overflow-hidden"
+      className="group block bg-white rounded-lg border border-gray-200 hover:border-[#118ab2] hover:shadow-md transition-all overflow-hidden max-w-xs"
     >
       {/* Preview Area */}
       <div className="h-40 bg-gray-100 relative overflow-hidden">

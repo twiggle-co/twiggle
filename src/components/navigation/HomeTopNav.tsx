@@ -29,14 +29,14 @@ export function HomeTopNav() {
           {session ? (
             <button
               onClick={() => setShowUserModal(true)}
-              className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black hover:opacity-90 transition-opacity"
+              className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black hover:opacity-90 transition-opacity overflow-hidden"
               title={session?.user?.email || "User"}
             >
-              {session.user?.image ? (
+              {session.user?.profilePictureUrl || session.user?.image ? (
                 <img
-                  src={session.user.image}
+                  src={(session.user.profilePictureUrl || session.user.image) ?? ""}
                   alt={session.user.name || "User"}
-                  className="h-10 w-10 rounded-full border-2 border-white"
+                  className="h-10 w-10 rounded-full border-2 border-white object-cover"
                 />
               ) : (
                 <span className="text-[#118ab2] font-semibold">

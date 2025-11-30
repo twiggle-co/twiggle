@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { X } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 interface UserProfileModalProps {
   isOpen: boolean
@@ -12,8 +13,13 @@ interface UserProfileModalProps {
 type Tab = "Account" | "Community" | "Notifications" | "Security"
 
 export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>("Account")
+  const [isUploading, setIsUploading] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
   const mouseDownRef = useRef<{ target: EventTarget | null; time: number } | null>(null)
 
@@ -46,10 +52,100 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
     signOut({ callbackUrl: "/" })
   }
 
+  const handleEditPictureClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type - only allow image files
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select an image file. Only image files are allowed.")
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("File size must be less than 5MB")
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+      return
+    }
+
+    setIsUploading(true)
+    setUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/users/profile-picture", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to upload profile picture")
+      }
+
+      // Refresh session to get updated profile picture
+      await update()
+      router.refresh()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Failed to upload profile picture")
+    } finally {
+      setIsUploading(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
+  const handleRemovePicture = async () => {
+    if (!session?.user?.profilePictureUrl) return
+
+    setIsRemoving(true)
+    setUploadError(null)
+
+    try {
+      const response = await fetch("/api/users/profile-picture", {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to remove profile picture")
+      }
+
+      // Refresh session to get updated profile picture (should be null now)
+      await update()
+      router.refresh()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Failed to remove profile picture")
+    } finally {
+      setIsRemoving(false)
+    }
+  }
+
   const tabs: Tab[] = ["Account", "Community", "Notifications", "Security"]
   const userName = session?.user?.name || "User"
   const userEmail = session?.user?.email || ""
   const userInitial = userName.charAt(0).toUpperCase()
+  
+  // Get profile picture URL - prefer custom, then OAuth image, then fallback to initial
+  const profilePictureUrl = session?.user?.profilePictureUrl || session?.user?.image
+  // Check if user has uploaded a custom profile picture (not just OAuth image)
+  const hasCustomProfilePicture = !!session?.user?.profilePictureUrl
 
   return (
     <div
@@ -97,21 +193,45 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
             <div className="space-y-6">
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  {session?.user?.image ? (
+                  {profilePictureUrl ? (
                     <img
-                      src={session.user.image}
+                      src={profilePictureUrl}
                       alt={userName}
-                      className="h-24 w-24 rounded-full"
+                      className="h-24 w-24 rounded-full object-cover"
                     />
                   ) : (
                     <div className="h-24 w-24 bg-[#118ab2] rounded-full flex items-center justify-center text-white text-3xl font-semibold">
                       {userInitial}
                     </div>
                   )}
-                  <button className="absolute bottom-0 right-0 px-3 py-1 bg-gray-700 text-white text-xs rounded hover:bg-gray-800 transition-colors">
-                    Edit
-                  </button>
+                  {hasCustomProfilePicture ? (
+                    <button
+                      onClick={handleRemovePicture}
+                      disabled={isRemoving}
+                      className="absolute bottom-0 right-0 px-2 py-0.5 bg-red-600 text-white text-[10px] rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRemoving ? "Removing..." : "Remove"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleEditPictureClick}
+                      disabled={isUploading}
+                      className="absolute bottom-0 right-0 px-2 py-0.5 bg-gray-700 text-white text-[10px] rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isUploading ? "Uploading..." : "Edit"}
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </div>
+                {uploadError && (
+                  <div className="text-sm text-red-600 mt-2">{uploadError}</div>
+                )}
               </div>
 
               <div className="space-y-4">

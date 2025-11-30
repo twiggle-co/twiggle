@@ -231,7 +231,7 @@ export async function uploadJsonToGCS(
 /**
  * Extract file name from storage URL
  */
-function extractFileNameFromUrl(storageUrl: string): string {
+export function extractFileNameFromUrl(storageUrl: string): string {
   // Handle public URLs: https://storage.googleapis.com/bucket-name/path/to/file.json
   if (storageUrl.includes(`${BUCKET_NAME}/`)) {
     const match = storageUrl.match(new RegExp(`${BUCKET_NAME}/([^?]+)`))

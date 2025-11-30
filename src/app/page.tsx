@@ -28,88 +28,36 @@ const nodeTypes = {
 function generateTwiggleGame(): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
-  const rows = [-200, 0, 200]
   
-  const columnConstraints = [
-    -200,
-    -200,
-    Math.random() < 0.5 ? -200 : 0,
-    0,
-    Math.random() < 0.5 ? 0 : 200,
-    200,
-    200,
+  // Fixed positions matching the design: T, W, I, G, G, L, E
+  // Colors: Yellow, Blue, Green, Red, Green, Blue, Yellow
+  const nodePositions = [
+    { x: -200, y: -200, color: colors.yellow },  // T - top-left, yellow
+    { x: 0, y: -200, color: colors.blue },       // W - top-right, blue
+    { x: -200, y: 0, color: colors.green },      // I - middle-left, green
+    { x: 0, y: 0, color: colors.red },            // G (first) - middle-center, red
+    { x: 0, y: 200, color: colors.green },        // G (second) - bottom-center, green
+    { x: 200, y: 0, color: colors.blue },         // L - middle-right, blue
+    { x: 200, y: 200, color: colors.yellow },    // E - bottom-right, yellow
   ]
 
-  const usedPositions = new Set<string>()
-  
-  // Fixed positions: T (index 0) at top-left, E (index 6) at bottom-right
-  const T_POSITION = { x: -200, y: -200 } // Top-left corner
-  const E_POSITION = { x: 200, y: 200 }   // Bottom-right corner
-  
-  // Reserve these positions
-  usedPositions.add(`${T_POSITION.x},${T_POSITION.y}`)
-  usedPositions.add(`${E_POSITION.x},${E_POSITION.y}`)
-  
-  // Ensure all 4 colors appear at least once
-  const shuffledColors = [...colorPalette].sort(() => Math.random() - 0.5)
-  const remainingColors: string[] = []
-  
-  // For the remaining nodes (7 letters - 4 colors = 3 remaining), add random colors
-  for (let i = 0; i < TWIGGLE_LETTERS.length - colorPalette.length; i++) {
-    remainingColors.push(colorPalette[Math.floor(Math.random() * colorPalette.length)])
-  }
-  
-  // Combine: first 4 colors (one of each) + remaining random colors
-  const allColors = [...shuffledColors, ...remainingColors].sort(() => Math.random() - 0.5)
-
   for (let i = 0; i < TWIGGLE_LETTERS.length; i++) {
-    let x: number
-    let y: number
-    
-    // T node (index 0) always at top-left
-    if (i === 0) {
-      x = T_POSITION.x
-      y = T_POSITION.y
-    }
-    // E node (index 6) always at bottom-right
-    else if (i === 6) {
-      x = E_POSITION.x
-      y = E_POSITION.y
-    }
-    // Other nodes: use column constraints and available rows
-    else {
-      x = columnConstraints[i]
-      
-      const availableRows = rows.filter(row => {
-        const positionKey = `${x},${row}`
-        return !usedPositions.has(positionKey)
-      })
-      
-      const shuffledRows = availableRows.length > 0 
-        ? [...availableRows].sort(() => Math.random() - 0.5)
-        : rows
-      
-      y = shuffledRows[0]
-      const positionKey = `${x},${y}`
-      usedPositions.add(positionKey)
-    }
-    
-    // Assign color ensuring all 4 appear at least once
-    const nodeColor = allColors[i]
+    const pos = nodePositions[i]
     
     nodes.push({
       id: `letter-${i}`,
       type: 'letterNode',
-      position: { x, y },
+      position: { x: pos.x, y: pos.y },
       data: {
         letter: TWIGGLE_LETTERS[i],
         index: i,
-        color: nodeColor,
+        color: pos.color,
       },
       draggable: true,
     })
   }
 
+  // Create edges in order: T -> W -> I -> G -> G -> L -> E
   for (let i = 0; i < TWIGGLE_LETTERS.length - 1; i++) {
     edges.push({
       id: `edge-${i}`,
@@ -184,11 +132,13 @@ export default function HomePage() {
         </div>
         <div className="w-1/3 bg-white p-8 border-l border-gray-200 flex flex-col">
           <div className="flex-1 overflow-y-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">Twiggle</h1>
-            <p className="text-xl text-gray-800 mb-8 leading-relaxed font-medium italic">
+            <h1 className="text-3xl font-mono font-bold text-gray-900 mb-6">
+              <span className="hover:underline cursor-pointer">Twiggle</span>
+            </h1>
+            {/* <p className="text-xl font-mono text-gray-800 mb-8 leading-relaxed font-light">
               Unify your work. Amplify your productivity.
-            </p>
-            <div className="space-y-6 text-gray-700">
+            </p> */}
+            <div className="space-y-6 text-gray-700 font-mono">
               <p className="leading-relaxed">
                 Twiggle revolutionizes how you work by unifying documents, spreadsheets, presentations, and files into a single, intelligent workspace. Break free from app-switching and fragmented workflows—everything you need is connected, accessible, and organized in one powerful platform.
               </p>
@@ -214,7 +164,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <p className="leading-relaxed text-gray-600 mt-6 pt-6 border-t border-gray-200 text-sm flex-shrink-0">
+          <p className="leading-relaxed font-mono text-gray-600 mt-6 pt-6 border-t border-gray-200 text-sm flex-shrink-0">
             The convergence of productivity tools—documents, spreadsheets, presentations, and file management—reimagined as one cohesive, intelligent workspace where every connection matters.
           </p>
         </div>

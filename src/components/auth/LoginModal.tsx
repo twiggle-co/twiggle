@@ -163,7 +163,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             <button
               type="submit"
-              className="w-full bg-[#ef476f] text-white py-3 rounded-lg hover:bg-[#d63d5f] transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-[#118ab2] text-white py-3 rounded-lg hover:bg-[#0F7CA0] transition-colors flex items-center justify-center gap-2"
             >
               <span>Log in</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

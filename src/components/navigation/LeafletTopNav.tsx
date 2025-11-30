@@ -79,9 +79,9 @@ export function LeafletTopNav({
         className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black overflow-hidden hover:opacity-90 transition-opacity"
         title={session?.user?.email || "User"}
       >
-        {session?.user?.image ? (
+        {session?.user?.profilePictureUrl || session?.user?.image ? (
           <img
-            src={session.user.image}
+            src={(session.user.profilePictureUrl || session.user.image) ?? ""}
             alt={session.user.name || "User"}
             className="h-full w-full object-cover rounded-full border-2 border-white"
           />

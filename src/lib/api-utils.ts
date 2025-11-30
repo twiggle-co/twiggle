@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "./prisma"
+import { getStorageInstance, BUCKET_NAME, extractFileNameFromUrl } from "./gcs"
 
 /**
  * Storage limit: 1GB
@@ -28,26 +29,60 @@ export async function requireAuth(): Promise<{ user: { id: string } }> {
 }
 
 /**
+ * Get file size from GCS by URL
+ */
+async function getFileSizeFromGCS(storageUrl: string | null): Promise<number> {
+  if (!storageUrl) return 0
+
+  try {
+    const storage = getStorageInstance()
+    const bucket = storage.bucket(BUCKET_NAME)
+    
+    const fileName = extractFileNameFromUrl(storageUrl)
+    const file = bucket.file(fileName)
+    
+    const [exists] = await file.exists()
+    if (!exists) return 0
+    
+    const [metadata] = await file.getMetadata()
+    return Number(metadata.size || 0)
+  } catch (error) {
+    console.error("Error getting file size from GCS:", error)
+    return 0
+  }
+}
+
+/**
  * Calculate total storage usage for a user
  */
 export async function calculateStorageUsage(userId: string) {
-  const [files, projects] = await Promise.all([
+  const [files, projects, user] = await Promise.all([
     prisma.file.findMany({
       where: { userId },
       select: { size: true },
     }),
     prisma.project.findMany({
       where: { ownerId: userId },
-      select: { title: true, description: true },
+      select: { 
+        title: true, 
+        description: true,
+        workflowDataUrl: true,
+      },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { profilePictureUrl: true },
     }),
   ])
 
+  // File storage: files uploaded by user (includes files in project folders)
   const fileStorageBytes = files.reduce(
     (sum, file) => sum + Number(file.size),
     0
   )
 
-  const projectStorageBytes = projects.reduce((sum, project) => {
+  // Project metadata storage: titles and descriptions
+  const projectMetadataBytes = projects.reduce((sum, project) => {
     const titleBytes = Buffer.byteLength(project.title, "utf8")
     const descBytes = project.description
       ? Buffer.byteLength(project.description, "utf8")
@@ -55,10 +90,24 @@ export async function calculateStorageUsage(userId: string) {
     return sum + titleBytes + descBytes
   }, 0)
 
+  // Workflow JSON files storage: get sizes from GCS
+  const workflowFileSizes = await Promise.all(
+    projects
+      .filter(p => p.workflowDataUrl)
+      .map(p => getFileSizeFromGCS(p.workflowDataUrl))
+  )
+  const workflowStorageBytes = workflowFileSizes.reduce((sum, size) => sum + size, 0)
+
+  // Profile picture storage: get size from GCS
+  const profilePictureBytes = await getFileSizeFromGCS(user?.profilePictureUrl || null)
+
+  const total = fileStorageBytes + projectMetadataBytes + workflowStorageBytes + profilePictureBytes
+
   return {
     fileStorage: fileStorageBytes,
-    projectStorage: projectStorageBytes,
-    total: fileStorageBytes + projectStorageBytes,
+    projectStorage: projectMetadataBytes + workflowStorageBytes,
+    profilePictureStorage: profilePictureBytes,
+    total,
   }
 }
 
@@ -168,7 +217,7 @@ export function handleApiError(error: unknown, defaultMessage: string) {
  * Get storage usage response
  */
 export async function getStorageUsageResponse(userId: string) {
-  const { fileStorage, projectStorage, total } =
+  const { fileStorage, projectStorage, profilePictureStorage, total } =
     await calculateStorageUsage(userId)
   const percentage = (total / STORAGE_LIMIT_BYTES) * 100
 
@@ -178,5 +227,6 @@ export async function getStorageUsageResponse(userId: string) {
     percentage: Math.min(100, Number(percentage.toFixed(2))),
     fileStorage,
     projectStorage,
+    profilePictureStorage,
   })
 }

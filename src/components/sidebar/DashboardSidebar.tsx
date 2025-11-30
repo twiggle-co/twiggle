@@ -43,7 +43,7 @@ export function DashboardSidebar() {
   
   const userInitial = session?.user?.name?.charAt(0).toUpperCase() || 
                      session?.user?.email?.charAt(0).toUpperCase() || "U"
-  const userName = session?.user?.name || session?.user?.email || "User"
+  const userName = session?.user?.name || session?.user?.email || ""
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -82,11 +82,11 @@ export function DashboardSidebar() {
       <div className="p-4 border-b border-[#2a2a2a]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            {session?.user?.image ? (
+            {session?.user?.profilePictureUrl || session?.user?.image ? (
               <img
-                src={session.user.image}
+                src={(session.user.profilePictureUrl || session.user.image) ?? ""}
                 alt={userName}
-                className="h-10 w-10 rounded-full"
+                className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
               <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-[#404040] font-semibold">
@@ -99,9 +99,9 @@ export function DashboardSidebar() {
           </div>
           <div className="flex items-center gap-2">
             <UserProfileDropdown />
-            <button className="p-1.5 hover:bg-white/20 rounded-lg transition-colors" aria-label="Notifications">
+            {/* <button className="p-1.5 hover:bg-white/20 rounded-lg transition-colors" aria-label="Notifications">
               <Bell className="h-4 w-4 text-white" />
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -142,7 +142,7 @@ export function DashboardSidebar() {
         <div className="px-4 py-2 mt-4">
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-white/80" />
-            <span className="text-xs font-medium text-white/80">Jaron Lee's team</span>
+            <span className="text-xs font-medium text-white/80">{userName}'s team</span>
             <span className="ml-auto text-xs px-2 py-0.5 bg-white/30 text-white rounded">Free</span>
           </div>
         </div>

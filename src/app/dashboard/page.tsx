@@ -79,7 +79,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-semibold text-gray-900">Recents</h1>
             <Link
               href="/dashboard/new"
-              className="flex items-center gap-2 px-4 py-2 bg-[#ef476f] text-white rounded-lg hover:bg-[#d63d5f] transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#118ab2] text-white rounded-lg hover:bg-[#0F7CA0] transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>New Project</span>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
           <div
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
                 : "space-y-2"
             }
           >

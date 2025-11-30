@@ -25,7 +25,7 @@ export function NodeActionButtons({ className, onMinimize, onRemove, isMinimized
         style={{ backgroundColor: colors.warning }}
         onClick={(event) => {
           event.stopPropagation()
-          onMinimize()
+          // onMinimize()
         }}
         aria-label={isMinimized ? "Restore node" : "Minimize node"}
       >

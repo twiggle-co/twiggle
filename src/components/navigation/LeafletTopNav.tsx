@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Sparkles, User, Save, AlertCircle } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useState } from "react"
+import { UserProfileModal } from "@/components/auth/UserProfileModal"
+import { colors } from "@/lib/colors"
 
 interface LeafletTopNavProps {
   projectName?: string
@@ -11,9 +13,6 @@ interface LeafletTopNavProps {
   hasUnsavedChanges?: boolean
 }
 
-/**
- * Leaflet (project canvas) top navigation
- */
 export function LeafletTopNav({ 
   projectName, 
   twigId, 
@@ -21,6 +20,7 @@ export function LeafletTopNav({
 }: LeafletTopNavProps) {
   const { data: session } = useSession()
   const [isSaving, setIsSaving] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -37,30 +37,34 @@ export function LeafletTopNav({
   }
 
   return (
-    <div className="h-18 bg-[#7BA4F4] text-white flex items-center justify-between px-6">
-      <Link href="/" className="flex items-center gap-2">
+    <div className="h-18 text-white flex items-center justify-between px-6" style={{ backgroundColor: colors.primary }}>
+      <button
+        onClick={() => window.location.href = "/"}
+        className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+      >
         <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black">
           <Sparkles className="h-5 w-5" />
         </div>
         <span className="font-semibold text-xl">Twiggle</span>
-      </Link>
+      </button>
 
       <div className="flex items-center gap-4">
         <Link href="/dashboard" className="font-medium text-lg">
           {projectName ? `My Projects / ${projectName}` : "My Projects"}
         </Link>
         
-        {hasUnsavedChanges && (
-          <div className="flex items-center gap-2 text-yellow-200">
+        {/* {hasUnsavedChanges && (
+          <div className="flex items-center gap-2" style={{ color: colors.warning }}>
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">Unsaved changes</span>
           </div>
-        )}
+        )} */}
         
         <button
           onClick={handleSave}
           disabled={isSaving || !hasUnsavedChanges}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-[#7BA4F4] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{ color: colors.primary }}
           title={hasUnsavedChanges ? "Save changes" : "All changes saved"}
         >
           <Save className="h-4 w-4" />
@@ -70,9 +74,9 @@ export function LeafletTopNav({
         </button>
       </div>
 
-      <Link
-        href="/user"
-        className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black overflow-hidden"
+      <button
+        onClick={() => setShowUserModal(true)}
+        className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black overflow-hidden hover:opacity-90 transition-opacity"
         title={session?.user?.email || "User"}
       >
         {session?.user?.image ? (
@@ -84,7 +88,9 @@ export function LeafletTopNav({
         ) : (
           <User className="h-5 w-5" />
         )}
-      </Link>
+      </button>
+
+      <UserProfileModal isOpen={showUserModal} onClose={() => setShowUserModal(false)} />
     </div>
   )
 }

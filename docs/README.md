@@ -1,70 +1,32 @@
 # Documentation
 
-Setup guides and documentation for the Twiggle Frontend application.
-
-## Quick Links
-
-- [Quick Setup Guide](./setup/setup-quickstart.md) - **Start here** - 5-minute setup guide
-- [Database Setup](./setup/database-setup.md) - Prisma + Vercel Postgres setup
-- [Google Auth Setup](./setup/google-auth.md) - Configure Google OAuth credentials
-- [Storage Setup](./setup/google-cloud-storage.md) - Google Cloud Storage for file uploads
-- [GitHub Setup](./setup/github.md) - Git and GitHub configuration
+Setup guides for the Twiggle Frontend application.
 
 ## Setup Guides
 
-### Essential Setup (Required)
+1. **[Vercel Postgres Setup](./guides/database-setup.md)** - Database setup with Prisma and Vercel Postgres
+2. **[Google Auth Setup](./guides/google-auth.md)** - Configure Google OAuth credentials
+3. **[Google Cloud Storage Setup](./guides/google-cloud-storage.md)** - File storage setup
 
-1. **[Database Setup](./setup/database-setup.md)** ⭐
-   - Prisma + Vercel Postgres
-   - User authentication storage
-   - Project data storage
+## Database Guides
 
-2. **[Google Auth Setup](./setup/google-auth.md)**
-   - Google OAuth credentials
-   - NextAuth.js configuration
+- **[Database Migrations](./guides/database-migrations.md)** - **Safely add, modify, or remove database fields and models**
 
-### Optional Setup
+## Design & Styling
 
-- **[Storage Setup](./setup/google-cloud-storage.md)** - File uploads and storage
-- **[GitHub Setup](./setup/github.md)** - Version control setup
-- **[Local Development Setup](./setup/local-setup.md)** - Local development configuration
-- **[Deployment Checklist](./setup/deployment-checklist.md)** - Pre-deployment checklist
-
-## Project Structure
-
-```
-twiggle-frontend/
-├── prisma/
-│   └── schema.prisma       # Database schema
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── auth/       # NextAuth routes
-│   │   │   └── projects/   # Project API routes
-│   │   ├── dashboard/      # Dashboard pages
-│   │   └── project/        # Project pages
-│   ├── lib/
-│   │   └── prisma.ts       # Prisma client
-│   └── middleware.ts       # Route protection
-└── docs/
-    └── setup/              # This documentation
-```
+- **[Color Palette](./guides/color-palette.md)** - **Centralized color definitions and usage guidelines**
 
 ## Getting Started
 
-1. **Set up database** → [Database Setup Guide](./setup/database-setup.md)
-2. **Configure authentication** → [Google Auth Setup](./setup/google-auth.md)
-3. **Install dependencies** → `npm install`
-4. **Start development** → `npm run dev`
+1. **Set up database** → [Vercel Postgres Setup](./guides/database-setup.md)
+2. **Configure authentication** → [Google Auth Setup](./guides/google-auth.md)
+3. **Set up file storage** → [Google Cloud Storage Setup](./guides/google-cloud-storage.md)
+4. **Install dependencies** → `npm install`
+5. **Start development** → `npm run dev`
 
-For detailed instructions, see the individual setup guides above.
+## Making Database Changes
 
-## Quick Database Access
-
-**View your database with Prisma Studio:**
-```bash
-npm run db:studio
-```
-Opens at `http://localhost:5555` - a visual UI to browse, edit, and manage your database.
-
-For production database access, see [Database Setup Guide](./setup/database-setup.md#accessing-database-in-production).
+When you need to modify your database schema:
+- **Read the [Database Migrations Guide](./guides/database-migrations.md)** first
+- Follow best practices to avoid data loss
+- Test migrations locally before deploying to production

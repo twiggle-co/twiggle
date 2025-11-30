@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { getStorageInstance, BUCKET_NAME } from "@/lib/gcs"
 import { handleApiError } from "@/lib/api-utils"
 
-/**
- * GET /api/files/[fileId]
- * Retrieve a file by its ID
- */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ fileId: string }> }
@@ -22,8 +18,6 @@ export async function GET(
 
     const storage = getStorageInstance()
     const bucket = storage.bucket(BUCKET_NAME)
-
-    // Find file by prefix
     const [files] = await bucket.getFiles({ prefix: fileId })
 
     if (files.length === 0) {
@@ -37,7 +31,6 @@ export async function GET(
       return NextResponse.json({ error: "File not found" }, { status: 404 })
     }
 
-    // Get file metadata and content
     const [metadata, buffer] = await Promise.all([
       file.getMetadata(),
       file.download(),

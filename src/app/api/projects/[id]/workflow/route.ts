@@ -4,9 +4,6 @@ import { prisma } from "@/lib/prisma"
 import { uploadJsonToGCS, downloadJsonFromGCS, BUCKET_NAME } from "@/lib/gcs"
 import { v4 as uuidv4 } from "uuid"
 
-/**
- * Create empty workflow structure
- */
 function createEmptyWorkflow(project: { createdAt: Date; updatedAt: Date }) {
   return {
     nodes: [],
@@ -19,18 +16,11 @@ function createEmptyWorkflow(project: { createdAt: Date; updatedAt: Date }) {
   }
 }
 
-/**
- * Extract file name from storage URL
- */
 function extractFileNameFromUrl(url: string): string | null {
   const match = url.match(new RegExp(`${BUCKET_NAME}/([^?]+)`))
   return match ? match[1] : null
 }
 
-/**
- * GET /api/projects/[id]/workflow
- * Get workflow data for a project
- */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,17 +31,14 @@ export async function GET(
 
     const project = await verifyProjectAccess(id, session.user.id)
 
-    // If no workflow data URL, return empty workflow
     if (!project.workflowDataUrl) {
       return NextResponse.json(createEmptyWorkflow(project))
     }
 
-    // Download workflow data from GCS
     try {
       const workflowData = await downloadJsonFromGCS(project.workflowDataUrl)
       return NextResponse.json(workflowData)
     } catch (error: any) {
-      // If file doesn't exist, clear the invalid URL and return empty workflow
       if (
         error?.message?.includes("File not found") ||
         error?.message?.includes("does not exist")
@@ -61,11 +48,8 @@ export async function GET(
             where: { id },
             data: { workflowDataUrl: null } as any,
           })
-          .catch(() => {
-            // Ignore update errors
-          })
+          .catch(() => {})
       }
-
       return NextResponse.json(createEmptyWorkflow(project))
     }
   } catch (error) {
@@ -74,10 +58,6 @@ export async function GET(
   }
 }
 
-/**
- * POST /api/projects/[id]/workflow
- * Save workflow data for a project
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -91,7 +71,6 @@ export async function POST(
     const body = await request.json()
     const { nodes, edges, metadata } = body
 
-    // Validate workflow data
     if (!Array.isArray(nodes) || !Array.isArray(edges)) {
       return NextResponse.json(
         { error: "Invalid workflow data: nodes and edges must be arrays" },
@@ -110,17 +89,13 @@ export async function POST(
       },
     }
 
-    // Determine file name (use existing if available, otherwise create new)
     const existingFileName = project.workflowDataUrl
       ? extractFileNameFromUrl(project.workflowDataUrl)
       : null
-    const fileName =
-      existingFileName || `workflows/${id}/${uuidv4()}.json`
+    const fileName = existingFileName || `workflows/${id}/${uuidv4()}.json`
 
-    // Upload to GCS
     const storageUrl = await uploadJsonToGCS(fileName, workflowData)
 
-    // Update project with new workflow URL
     await prisma.project.update({
       where: { id },
       data: {

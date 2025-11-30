@@ -10,9 +10,6 @@ import {
   Pencil,
 } from "lucide-react"
 
-/**
- * User profile dropdown component
- */
 export function UserProfileDropdown() {
   const { data: session } = useSession()
   const [isOpen, setIsOpen] = useState(false)
@@ -48,11 +45,11 @@ export function UserProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+        className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
         aria-label="User menu"
         aria-expanded={isOpen}
       >
-        <ChevronDown className="h-4 w-4 text-gray-600" />
+        <ChevronDown className="h-4 w-4 text-white" />
       </button>
 
       {isOpen && (
@@ -67,7 +64,7 @@ export function UserProfileDropdown() {
                   className="h-20 w-20 rounded-full"
                 />
               ) : (
-                <div className="h-20 w-20 bg-[#7BA4F4] rounded-full flex items-center justify-center text-white text-2xl font-semibold">
+                <div className="h-20 w-20 bg-[#118ab2] rounded-full flex items-center justify-center text-white text-2xl font-semibold">
                   {userInitial}
                 </div>
               )}

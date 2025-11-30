@@ -39,8 +39,7 @@ export default function DashboardPage() {
       const data = await response.json()
       setProjects(data)
       setError(null)
-    } catch (err) {
-      console.error("Error fetching projects:", err)
+    } catch {
       setError("Failed to load projects. Please try again.")
     } finally {
       setIsLoading(false)
@@ -49,7 +48,7 @@ export default function DashboardPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
+      <div className="flex-1 flex items-center justify-center bg-white">
         <div className="text-gray-600">Loading...</div>
       </div>
     )
@@ -57,7 +56,7 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
+      <div className="flex-1 flex items-center justify-center bg-white">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4 text-gray-900">Please sign in to view your projects</h1>
           <LoginButton />
@@ -73,22 +72,20 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex-1 overflow-auto bg-[#C9D9F8]">
+    <div className="flex-1 overflow-auto bg-white">
       <div className="p-8">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-semibold text-gray-900">Recents</h1>
             <Link
               href="/dashboard/new"
-              className="flex items-center gap-2 px-4 py-2 bg-[#7BA4F4] text-white rounded-lg hover:bg-[#6a94e3] transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#ef476f] text-white rounded-lg hover:bg-[#d63d5f] transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>New Project</span>
             </Link>
           </div>
 
-          {/* Filter Tabs */}
           <div className="flex items-center gap-1 mb-4">
             {filters.map((filter) => (
               <button
@@ -96,8 +93,8 @@ export default function DashboardPage() {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                   activeFilter === filter.id
-                    ? "bg-[#7BA4F4] text-white"
-                    : "text-gray-600 hover:bg-white/50"
+                    ? "bg-[#118ab2] text-white"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 {filter.label}
@@ -105,29 +102,27 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Filter Dropdowns and View Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 All organizations
                 <ChevronDown className="h-4 w-4" />
               </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 All files
                 <ChevronDown className="h-4 w-4" />
               </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+              <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 Last viewed
                 <ChevronDown className="h-4 w-4" />
               </button>
             </div>
 
-            {/* View Toggle */}
             <div className="flex items-center gap-1 bg-white rounded-lg p-1">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-1.5 rounded transition-colors ${
-                  viewMode === "grid" ? "bg-[#7BA4F4] text-white" : "text-gray-600 hover:bg-gray-100"
+                  viewMode === "grid" ? "bg-[#118ab2] text-white" : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 <Grid3x3 className="h-4 w-4" />
@@ -135,7 +130,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setViewMode("list")}
                 className={`p-1.5 rounded transition-colors ${
-                  viewMode === "list" ? "bg-[#7BA4F4] text-white" : "text-gray-600 hover:bg-gray-100"
+                  viewMode === "list" ? "bg-[#118ab2] text-white" : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -144,26 +139,24 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <div className="mb-4 p-4 bg-[#ef476f]/10 border border-[#ef476f]/30 rounded-lg text-[#ef476f]">
             {error}
             <button
               onClick={fetchProjects}
-              className="ml-2 underline hover:no-underline"
+              className="ml-2 underline hover:no-underline text-[#118ab2]"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Projects Grid/List */}
         {projects.length === 0 && !error ? (
           <div className="text-center py-12 bg-white rounded-lg">
             <p className="text-gray-500 mb-4">No projects yet</p>
             <Link
               href="/dashboard/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#7BA4F4] text-white rounded-lg hover:bg-[#6a94e3]"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#06d6a0] text-white rounded-lg hover:bg-[#05C090]"
             >
               <Plus className="h-4 w-4" />
               Create your first project

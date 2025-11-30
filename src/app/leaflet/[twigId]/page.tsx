@@ -5,9 +5,6 @@ import { LeafletTopNav } from "@/components/navigation/LeafletTopNav"
 import { LeafletSidebar } from "@/components/sidebar/LeafletSidebar"
 import { NodeCanvas } from "@/components/canvas/NodeCanvas"
 
-/**
- * Leaflet (project canvas) page
- */
 export default function LeafletPage({
   params,
 }: {
@@ -16,6 +13,7 @@ export default function LeafletPage({
   const { twigId } = use(params)
   const [projectName, setProjectName] = useState("Loading...")
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(true)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
@@ -27,8 +25,7 @@ export default function LeafletPage({
         }
         const project = await response.json()
         setProjectName(project.title || "Untitled Project")
-      } catch (error) {
-        console.error("Error fetching project:", error)
+      } catch {
         setProjectName("Project")
       } finally {
         setIsLoading(false)
@@ -48,10 +45,11 @@ export default function LeafletPage({
         hasUnsavedChanges={hasUnsavedChanges}
       />
       <div className="flex flex-1 overflow-hidden">
-        <LeafletSidebar />
+        {!isLoadingWorkflow && <LeafletSidebar />}
         <NodeCanvas 
           projectId={twigId} 
           onUnsavedChangesChange={setHasUnsavedChanges}
+          onLoadingChange={setIsLoadingWorkflow}
         />
       </div>
     </div>

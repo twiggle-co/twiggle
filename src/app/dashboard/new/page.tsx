@@ -5,9 +5,6 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { LoginButton } from "@/components/auth/LoginButton"
 
-/**
- * New project creation page
- */
 export default function NewProjectPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -16,7 +13,7 @@ export default function NewProjectPage() {
 
   if (status === "loading") {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
+      <div className="flex-1 flex items-center justify-center bg-[#eeeeee]">
         <div className="text-gray-600">Loading...</div>
       </div>
     )
@@ -24,7 +21,7 @@ export default function NewProjectPage() {
 
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#C9D9F8]">
+      <div className="flex-1 flex items-center justify-center bg-[#eeeeee]">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4 text-gray-900">Please sign in to create a project</h1>
           <LoginButton />
@@ -60,7 +57,6 @@ export default function NewProjectPage() {
       const project = await response.json()
       router.push(`/leaflet/${project.id}`)
     } catch (error) {
-      console.error("Error creating project:", error)
       alert(
         error instanceof Error
           ? error.message
@@ -71,7 +67,7 @@ export default function NewProjectPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-[#C9D9F8] p-8">
+    <div className="flex-1 overflow-auto bg-[#eeeeee] p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-semibold text-gray-900 mb-8">Create New Project</h1>
         
@@ -87,7 +83,7 @@ export default function NewProjectPage() {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Enter project name..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7BA4F4]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#118ab2]"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleCreate()
@@ -100,7 +96,7 @@ export default function NewProjectPage() {
               <button
                 onClick={handleCreate}
                 disabled={isCreating || !projectName.trim()}
-                className="px-6 py-2 bg-[#7BA4F4] text-white rounded-lg hover:bg-[#6a94e3] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#ef476f] text-white rounded-lg hover:bg-[#d63d5f] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCreating ? "Creating..." : "Create Project"}
               </button>

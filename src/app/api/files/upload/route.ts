@@ -4,10 +4,6 @@ import { requireAuth, verifyProjectAccess, checkStorageLimit, handleApiError } f
 import { prisma } from "@/lib/prisma"
 import { generateStorageFileName, uploadFileToGCS } from "@/lib/file-utils"
 
-/**
- * POST /api/files/upload
- * Upload a file
- */
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth()
@@ -16,7 +12,6 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File
     const projectId = formData.get("projectId") as string | null
 
-    // Validate file
     if (!file) {
       return NextResponse.json(
         { error: "No file provided" },
@@ -24,12 +19,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate project access if projectId provided
     if (projectId) {
       await verifyProjectAccess(projectId, session.user.id)
     }
 
-    // Check storage limit
     const storageCheck = await checkStorageLimit(session.user.id, file.size)
     if (storageCheck.exceeded) {
       return NextResponse.json(
@@ -41,7 +34,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Prepare file for upload
     const fileId = uuidv4()
     const fileExtension = file.name.split(".").pop() || ""
     const storageFileName = generateStorageFileName(
@@ -52,8 +44,6 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
-
-    // Upload to GCS
     const storageUrl = await uploadFileToGCS(
       storageFileName,
       buffer,
@@ -63,7 +53,6 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Save file metadata to database
     await prisma.file.create({
       data: {
         fileId,

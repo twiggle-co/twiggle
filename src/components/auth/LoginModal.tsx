@@ -163,7 +163,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             <button
               type="submit"
-              className="w-full bg-[#7BA4F4] text-white py-3 rounded-lg hover:brightness-110 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-[#ef476f] text-white py-3 rounded-lg hover:bg-[#d63d5f] transition-colors flex items-center justify-center gap-2"
             >
               <span>Log in</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,15 +174,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
           {/* Links */}
           <div className="mt-6 space-y-2 text-center">
-            <a href="#" className="block text-blue-600 text-sm hover:underline">
+            <a href="#" className="block text-[#118ab2] text-sm hover:underline">
               Use single sign-on
             </a>
-            <a href="#" className="block text-blue-600 text-sm hover:underline">
+            <a href="#" className="block text-[#118ab2] text-sm hover:underline">
               Reset password
             </a>
             <div className="text-sm text-gray-600">
               No account?{" "}
-              <a href="#" className="text-blue-600 hover:underline">
+              <a href="#" className="text-[#118ab2] hover:underline">
                 Create one
               </a>
             </div>

@@ -7,6 +7,7 @@ import { UploadCloud, FileText, X as CloseIcon, PlusIcon, Plus, ChevronDown } fr
 import type { TwiggleNode } from "../types"
 import { useDraggableWindow } from "./hooks/useDraggableWindow"
 import { PreviewWindow } from "./PreviewWindow"
+import { colors, colorUtils } from "@/lib/colors"
 
 export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
   // Extract nodeType from id if not in data (backward compatibility)
@@ -271,7 +272,8 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
     <div className={`nodrag flex gap-2 ${className}`}>
       <button
         type="button"
-        className="h-4 w-4 rounded-full bg-[#FFBD2E] shadow-sm hover:brightness-110 transition-all flex items-center justify-center"
+        className="h-4 w-4 rounded-full shadow-sm hover:brightness-110 transition-all flex items-center justify-center"
+        style={{ backgroundColor: colors.warning }}
         onClick={(event) => {
           event.stopPropagation()
           // setIsMinimized((prev) => !prev)
@@ -283,7 +285,8 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       </button>
       <button
         type="button"
-        className="h-4 w-4 rounded-full bg-[#FF5F56] shadow-sm hover:brightness-160 transition-all flex items-center justify-center"
+        className="h-4 w-4 rounded-full shadow-sm hover:brightness-160 transition-all flex items-center justify-center"
+        style={{ backgroundColor: colors.secondary }}
         onClick={(event) => {
           event.stopPropagation()
           setShowConfirmRemove(true)
@@ -301,9 +304,10 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
 
   return (
     <div
-      className={`relative w-60 bg-white rounded-[28px] shadow-[0_15px_35px_rgba(19,45,70,0.15)] border border-[#D5DEEE] px-5 ${
+      className={`relative w-60 bg-white rounded-[28px] shadow-[0_15px_35px_rgba(19,45,70,0.15)] border px-5 ${
         isMinimized ? "py-3" : "py-5"
       }`}
+      style={{ borderColor: colors.gray + '80' }}
     >
       {isMinimized ? (
         <div className="flex items-center justify-between gap-3">
@@ -315,13 +319,13 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
           {!showConfirmRemove && renderActionButtons("absolute top-3 right-5")}
 
           {data.kind === "file" && !showConfirmRemove && (
-            <div className="text-xs font-semibold uppercase tracking-[0.4em] text-[#6B7C92] mb-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.4em] mb-3" style={{ color: colors.darkGray + 'CC' }}>
               File
             </div>
           )}
 
           {data.kind === "agent" && !showConfirmRemove && (
-            <div className="text-xs font-semibold uppercase tracking-[0.4em] text-[#6B7C92] mb-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.4em] mb-3" style={{ color: colors.darkGray + 'CC' }}>
               Tool
             </div>
           )}
@@ -339,7 +343,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
                   value={fileName}
                   onChange={(e) => setFileName(e.target.value)}
                   placeholder="Enter file name"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7BA4F4] focus:border-transparent transition-all text-sm shadow-sm hover:border-gray-400"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#118ab2] focus:border-transparent transition-all text-sm shadow-sm hover:border-gray-400"
                 />
               </div>
 
@@ -351,7 +355,10 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
                 <select
                   value={fileType}
                   onChange={(e) => setFileType(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#7BA4F4] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7BA4F4] focus:ring-offset-2 focus:ring-offset-white text-sm appearance-none cursor-pointer pr-10 shadow-sm hover:brightness-110 transition-all"
+                  className="w-full px-4 py-2.5 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white text-sm appearance-none cursor-pointer pr-10 shadow-sm hover:brightness-110 transition-all"
+                  style={{ backgroundColor: colors.primary }}
+                  onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.primary}`}
+                  onBlur={(e) => e.currentTarget.style.boxShadow = ''}
                 >
                   <option value="Markdown (.md)">Markdown (.md)</option>
                   <option value="Text (.txt)">Text (.txt)</option>
@@ -369,11 +376,24 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
               <div className="pt-1">
                 <button
                   type="button"
-                  className={`nodrag mx-auto flex items-center justify-center rounded-full bg-[#7BA4F4] px-8 py-2.5 text-white text-sm font-semibold shadow-md transition-all ${
+                  className={`nodrag mx-auto flex items-center justify-center rounded-full px-8 py-2.5 text-white text-sm font-semibold shadow-md transition-all ${
                     fileName.trim()
-                      ? "hover:bg-[#6a94e3] hover:shadow-lg active:scale-[0.98]"
+                      ? "hover:shadow-lg active:scale-[0.98]"
                       : "opacity-50 cursor-not-allowed"
                   }`}
+                  style={{ 
+                    backgroundColor: fileName.trim() ? colors.primary : colors.primary,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (fileName.trim()) {
+                      e.currentTarget.style.backgroundColor = colors.blueDark
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (fileName.trim()) {
+                      e.currentTarget.style.backgroundColor = colors.primary
+                    }
+                  }}
                   onClick={async () => {
                     // Handle create file action
                     if (fileName.trim() && !isCreating) {
@@ -413,7 +433,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
           {/* File-output node UI */}
           {data.kind === "file" && nodeType === "file-output" && !showConfirmRemove && (
             <div className="nodrag text-center py-4">
-              <FileText className="mx-auto h-12 w-12 text-[#7BA4F4] mb-2" />
+              <FileText className="mx-auto h-12 w-12 mb-2" style={{ color: colors.primary }} />
               <p className="text-sm text-gray-600">Output File</p>
               <p className="text-xs text-gray-400 mt-1">Files will be saved here</p>
             </div>
@@ -422,17 +442,19 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
           {/* File-upload node UI */}
           {data.kind === "file" && (nodeType === "file-upload" || (!nodeType && !data.fileName)) && !fileInfo && !showConfirmRemove && (
             <div
-              className="nodrag rounded-2xl text-center bg-[#F8FBFF]"
+              className="nodrag rounded-2xl text-center"
+              style={{ backgroundColor: colorUtils.lighten(colors.primary, 0.05) }}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
-              <UploadCloud className="mx-auto h-12 w-12 text-[#7BA4F4]" />
+              <UploadCloud className="mx-auto h-12 w-12" style={{ color: colors.primary }} />
               <p className="text-[11px] mt-2 text-sm text-gray-600">Select your file or drag and drop</p>
               <p className="text-[9px] text-gray-400">png, pdf, jpg, docx accepted</p>
               <button
                 type="button"
                 disabled={isUploading}
-                className="nodrag mt-2 inline-flex items-center justify-center rounded-full bg-[#7BA4F4] px-10 py-2 text-white text-sm font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                className="nodrag mt-2 inline-flex items-center justify-center rounded-full px-10 py-2 text-white text-sm font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: colors.primary }}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isUploading ? "Uploading..." : "Browse"}
@@ -443,11 +465,14 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
           {data.kind === "file" && fileInfo && !showConfirmRemove && (
             <div className="nodrag relative">
               <div
-                className="flex items-center gap-4 border border-[#C4CEDC] rounded-2xl px-4 py-3 bg-white cursor-pointer"
+                className="flex items-center gap-4 border rounded-2xl px-4 py-3 bg-white cursor-pointer"
+                style={{ borderColor: colors.gray + '80' }}
                 onClick={() => setShowPreview((prev) => !prev)}
               >
-                <div className="h-12 w-12 bg-[#EEF1FA] rounded-xl flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-[#7BA4F4]" />
+                <div className="h-12 w-12 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: colorUtils.lighten(colors.primary, 0.1) }}
+                >
+                  <FileText className="h-6 w-6" style={{ color: colors.primary }} />
                 </div>
                 <div className="flex-1 text-left">
                   <div className="text-sm font-semibold text-gray-700 truncate">{fileInfo.name}</div>
@@ -509,13 +534,13 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       {/* Handle logic: file-output has both input and output, others have output only */}
       {/* Input handle: only file-output and non-file nodes */}
       {(data.kind !== "file" || nodeType === "file-output") && (
-        <Handle type="target" position={Position.Left} style={{width:'16px', height:'16px', background:'#7BA4F4'}} className="flex items-center justify-center cursor-pointer">
+        <Handle type="target" position={Position.Left} style={{width:'16px', height:'16px', background: colors.primary}} className="flex items-center justify-center cursor-pointer">
           <PlusIcon className="w-4 h-4 text-white" />
         </Handle>
       )}
       
       {/* Output handle: all nodes have output */}
-      <Handle type="source" position={Position.Right} style={{width:'16px', height:'16px', background:'#7BA4F4'}} className="flex items-center justify-center cursor-pointer">
+      <Handle type="source" position={Position.Right} style={{width:'16px', height:'16px', background: colors.primary}} className="flex items-center justify-center cursor-pointer">
         <PlusIcon className="w-4 h-4 text-white" />
       </Handle>
 
@@ -530,7 +555,9 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       />
 
       {showConfirmRemove && (
-        <div className="relative inset-0 rounded-[28px] bg-white/90 backdrop-blur-[2px] border border-[#F0F2F8] flex flex-col items-center justify-center text-center px-4">
+        <div className="relative inset-0 rounded-[28px] bg-white/90 backdrop-blur-[2px] flex flex-col items-center justify-center text-center px-4"
+          style={{ borderColor: colors.gray + '60' }}
+        >
           <p className="text-sm font-semibold text-gray-700 mb-2">Remove this node?</p>
           <p className="text-xs text-gray-500 mb-4">
             Removing will also delete any connections attached to it.

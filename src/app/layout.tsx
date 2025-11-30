@@ -18,9 +18,6 @@ export const metadata: Metadata = {
   description: "Visual workflow builder with drag-and-drop interface for creating and managing projects",
 }
 
-/**
- * Root layout
- */
 export default function RootLayout({
   children,
 }: Readonly<{

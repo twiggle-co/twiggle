@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom"
 import { X as CloseIcon, Maximize2, Minimize2 } from "lucide-react"
 import type { UploadedFileMeta } from "../types"
+import { colors } from "@/lib/colors"
 
 type PreviewWindowProps = {
   isOpen: boolean
@@ -44,10 +45,11 @@ export function PreviewWindow({
   return createPortal(
     <div
       ref={windowRef}
-      className={`fixed bg-white border border-[#D9DFEA] shadow-2xl z-[9999] ${
+      className={`fixed bg-white border shadow-2xl z-[9999] ${
         windowState === "minimized" ? "h-12 overflow-hidden" : ""
       } ${windowState === "maximized" ? "rounded-none" : "rounded-3xl"}`}
       style={{
+        borderColor: colors.gray + '80',
         left: `${windowPosition.x}px`,
         top: `${windowPosition.y}px`,
         width: `${windowSize.width}px`,
@@ -58,10 +60,12 @@ export function PreviewWindow({
       {/* Title Bar */}
       <div
         ref={titleBarRef}
-        className={`flex items-center justify-between px-4 border-b border-[#EEF1F6] bg-[#F7F9FC] ${
+        className={`flex items-center justify-between px-4 border-b ${
           windowState === "maximized" ? "rounded-none" : "rounded-t-3xl"
         } ${windowState === "minimized" ? "border-b-0" : ""}`}
-        style={{
+        style={{ 
+          borderColor: colors.gray + '60',
+          backgroundColor: colors.background,
           cursor: windowState === "maximized" || windowState === "minimized" ? "default" : "grab",
           userSelect: "none",
         }}
@@ -73,9 +77,9 @@ export function PreviewWindow({
       >
         <div className="flex items-center gap-2 text-sm text-gray-600 flex-1 min-w-0">
           <span className="inline-flex gap-1 flex-shrink-0">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F56]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#27C93F]" />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors.secondary }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors.warning }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors.success }} />
           </span>
           <span className="font-medium truncate">{fileName}</span>
         </div>
@@ -97,7 +101,10 @@ export function PreviewWindow({
           </button>
           <button
             type="button"
-            className="nodrag text-gray-400 hover:text-red-500 p-1"
+            className="nodrag text-gray-400 p-1"
+            style={{ color: 'inherit' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = colors.secondary}
+            onMouseLeave={(e) => e.currentTarget.style.color = ''}
             onClick={(e) => {
               e.stopPropagation()
               onClose()

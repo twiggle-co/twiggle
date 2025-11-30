@@ -27,9 +27,6 @@ interface StorageUsage {
   projectStorage: number
 }
 
-/**
- * Format bytes to human-readable string
- */
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B"
   const k = 1024
@@ -38,9 +35,6 @@ function formatBytes(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
 }
 
-/**
- * Dashboard sidebar component
- */
 export function DashboardSidebar() {
   const { data: session } = useSession()
   const pathname = usePathname()
@@ -65,8 +59,7 @@ export function DashboardSidebar() {
         const data = await response.json()
         setStorageUsage(data)
       }
-    } catch (error) {
-      console.error("Error fetching storage usage:", error)
+    } catch {
     } finally {
       setIsLoadingStorage(false)
     }
@@ -85,9 +78,8 @@ export function DashboardSidebar() {
   ]
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
-      {/* User Profile Section */}
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-64 bg-[#404040] border-r border-[#2a2a2a] flex flex-col h-full">
+      <div className="p-4 border-b border-[#2a2a2a]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {session?.user?.image ? (
@@ -97,29 +89,28 @@ export function DashboardSidebar() {
                 className="h-10 w-10 rounded-full"
               />
             ) : (
-              <div className="h-10 w-10 bg-[#7BA4F4] rounded-full flex items-center justify-center text-white font-semibold">
+              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-[#404040] font-semibold">
                 {userInitial}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
+              <p className="text-sm font-medium text-white truncate">{userName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <UserProfileDropdown />
-            <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Notifications">
-              <Bell className="h-4 w-4 text-gray-600" />
+            <button className="p-1.5 hover:bg-white/20 rounded-lg transition-colors" aria-label="Notifications">
+              <Bell className="h-4 w-4 text-white" />
             </button>
           </div>
         </div>
 
-        {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70" />
           <input
             type="text"
             placeholder="Search"
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7BA4F4] focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-white/20 border border-white/30 rounded-lg text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
           />
         </div>
       </div>
@@ -136,8 +127,8 @@ export function DashboardSidebar() {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
                   isActive
-                    ? "bg-[#7BA4F4] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-white text-[#404040]"
+                    : "text-white hover:bg-white/20"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -150,9 +141,9 @@ export function DashboardSidebar() {
         {/* Team Section */}
         <div className="px-4 py-2 mt-4">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-500">Jaron Lee's team</span>
-            <span className="ml-auto text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">Free</span>
+            <Users className="h-4 w-4 text-white/80" />
+            <span className="text-xs font-medium text-white/80">Jaron Lee's team</span>
+            <span className="ml-auto text-xs px-2 py-0.5 bg-white/30 text-white rounded">Free</span>
           </div>
         </div>
 
@@ -164,7 +155,7 @@ export function DashboardSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center justify-between px-3 py-2 rounded-lg mb-1 text-gray-700 hover:bg-gray-100 transition-colors group"
+                className="flex items-center justify-between px-3 py-2 rounded-lg mb-1 text-white hover:bg-white/20 transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <Icon className="h-5 w-5" />
@@ -176,7 +167,7 @@ export function DashboardSidebar() {
                       e.preventDefault()
                       // Handle add draft action
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/30 rounded transition-opacity"
                     aria-label="Add draft"
                   >
                     <Plus className="h-4 w-4" />
@@ -189,28 +180,28 @@ export function DashboardSidebar() {
       </div>
 
       {/* Storage Usage Bar */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
+      <div className="p-4 border-t border-[#2a2a2a] bg-[#2a2a2a]">
         <div className="flex items-center gap-2 mb-2">
-          <HardDrive className="h-4 w-4 text-gray-600" />
-          <span className="text-xs font-medium text-gray-700">Storage</span>
+          <HardDrive className="h-4 w-4 text-white/80" />
+          <span className="text-xs font-medium text-white">Storage</span>
         </div>
         {isLoadingStorage ? (
-          <div className="text-xs text-gray-500">Loading...</div>
+          <div className="text-xs text-white/70">Loading...</div>
         ) : storageUsage ? (
           <>
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="w-full bg-white/30 rounded-full h-2 mb-2">
               <div
                 className={`h-2 rounded-full transition-all ${
                   storageUsage.percentage >= 90
-                    ? "bg-red-500"
+                    ? "bg-[#ef476f]"
                     : storageUsage.percentage >= 75
-                    ? "bg-yellow-500"
-                    : "bg-[#7BA4F4]"
+                    ? "bg-[#ffd166]"
+                    : "bg-[#06d6a0]"
                 }`}
                 style={{ width: `${Math.min(100, storageUsage.percentage)}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center justify-between text-xs text-white/90">
               <span>
                 {formatBytes(storageUsage.used)} / {formatBytes(storageUsage.limit)}
               </span>
@@ -218,7 +209,7 @@ export function DashboardSidebar() {
             </div>
           </>
         ) : (
-          <div className="text-xs text-gray-500">Unable to load storage</div>
+          <div className="text-xs text-white/70">Unable to load storage</div>
         )}
       </div>
     </div>

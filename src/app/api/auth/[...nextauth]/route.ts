@@ -22,9 +22,7 @@ export const authOptions = {
       return session
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // Allow relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allow callback URLs on the same origin
       if (new URL(url).origin === baseUrl) return url
       return baseUrl
     },
@@ -32,13 +30,12 @@ export const authOptions = {
   session: {
     strategy: "database" as const,
   },
-  debug: process.env.NODE_ENV === "development",
+  trustHost: true,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 }
 
 const { handlers, auth } = NextAuth(authOptions)
 
 export const { GET, POST } = handlers
 export { auth }
-
-// Ensure this route runs in Node.js runtime (required for Prisma)
 export const runtime = "nodejs"

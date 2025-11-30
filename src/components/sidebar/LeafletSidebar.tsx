@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { DragEvent } from "react"
 import { requestCanvasNode, type CanvasNodeKind } from "@/lib/canvasActions"
+import { colors } from "@/lib/colors"
 
 interface NodeItem {
   id: CanvasNodeKind
@@ -166,11 +167,12 @@ export function LeafletSidebar() {
   }
 
   return (
-    <div className="w-64 bg-[#F7F2E9] border-r border-gray-200 p-4 flex flex-col gap-6">
+    <div className="w-64 border-r border-gray-200 p-4 flex flex-col gap-6" style={{ backgroundColor: colors.background }}>
       <div className="relative">
         <input
           placeholder="Search"
-          className="w-full px-8 py-2 rounded-full bg-[#C9D9F8] shadow-sm text-sm focus:outline-none placeholder:text-gray-400"
+          className="w-full px-8 py-2 rounded-full shadow-sm text-sm focus:outline-none placeholder:text-gray-400"
+          style={{ backgroundColor: colors.gray }}
         />
         <Search className="absolute left-3 top-[9px] h-4 w-4 text-gray-500" />
       </div>

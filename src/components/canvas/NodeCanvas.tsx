@@ -17,6 +17,7 @@ import {
   type XYPosition,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
+import { AlertCircle } from "lucide-react"
 import {
   CANVAS_ADD_NODE_EVENT,
   type CanvasNodeKind,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/canvasActions"
 import { TwiggleNodeCard } from "./nodes/TwiggleNodeCard"
 import type { UploadedFileMeta, TwiggleNode, TwiggleNodeData } from "./types"
+import { colors, colorUtils } from "@/lib/colors"
 
 type DragType = CanvasNodeKind
 
@@ -137,9 +139,10 @@ const AUTOSAVE_INTERVAL = 30000
 interface InnerCanvasProps {
   projectId: string | null
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
+  onLoadingChange?: (isLoading: boolean) => void
 }
 
-function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
+function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: InnerCanvasProps) {
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null)
   const reactFlow = useReactFlow<TwiggleNode, Edge>()
   const [nodes, setNodes, onNodesChange] = useNodesState<TwiggleNode>([])
@@ -264,6 +267,11 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
       isInitialLoadRef.current = false
     }
   }, [projectId, handleFileChange, handleRemoveNode, setNodes, setEdges, generateWorkflowHash])
+
+  // Notify parent when loading state changes
+  useEffect(() => {
+    onLoadingChange?.(isLoading)
+  }, [isLoading, onLoadingChange])
 
   // Save workflow to API
   const saveWorkflow = useCallback(async (silent: boolean = false) => {
@@ -452,7 +460,7 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
 
   // ReactFlow
   return (
-    <div ref={reactFlowWrapperRef} className="flex-1 bg-[#C9D9F8] relative">
+    <div ref={reactFlowWrapperRef} className="flex-1 relative" style={{ backgroundColor: colors.background }}>
       {isLoading && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white px-4 py-2 rounded-lg shadow-lg">
           <span className="text-sm text-gray-700">Loading workflow...</span>
@@ -464,8 +472,18 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
         </div>
       )}
       {hasUnsavedChanges && !isSaving && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-100 border border-yellow-400 px-4 py-2 rounded-lg shadow-lg">
-          <span className="text-sm text-yellow-800">Unsaved changes</span>
+        <div 
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2"
+          style={{ 
+            backgroundColor: colorUtils.lighten(colors.gray, 0.8),
+            borderColor: colors.warning,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            color: colors.warning + 'CC'
+          }}
+        >
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">Unsaved changes</span>
         </div>
       )}
       <ReactFlow<TwiggleNode, Edge>
@@ -489,12 +507,17 @@ function InnerCanvas({ projectId, onUnsavedChangesChange }: InnerCanvasProps) {
 interface NodeCanvasProps {
   projectId?: string | null
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
+  onLoadingChange?: (isLoading: boolean) => void
 }
 
-export function NodeCanvas({ projectId = null, onUnsavedChangesChange }: NodeCanvasProps) {
+export function NodeCanvas({ projectId = null, onUnsavedChangesChange, onLoadingChange }: NodeCanvasProps) {
   return (
     <ReactFlowProvider>
-      <InnerCanvas projectId={projectId} onUnsavedChangesChange={onUnsavedChangesChange} />
+      <InnerCanvas 
+        projectId={projectId} 
+        onUnsavedChangesChange={onUnsavedChangesChange}
+        onLoadingChange={onLoadingChange}
+      />
     </ReactFlowProvider>
   )
 }

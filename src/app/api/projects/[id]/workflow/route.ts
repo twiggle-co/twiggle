@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, verifyProjectAccess, handleApiError } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { uploadJsonToGCS, downloadJsonFromGCS, BUCKET_NAME } from "@/lib/gcs"
+import { uploadJsonToGCS, downloadJsonFromGCS, extractFileNameFromUrl } from "@/lib/gcs"
 import { v4 as uuidv4 } from "uuid"
 
 function createEmptyWorkflow(project: { createdAt: Date; updatedAt: Date }) {
@@ -14,11 +14,6 @@ function createEmptyWorkflow(project: { createdAt: Date; updatedAt: Date }) {
       updatedAt: project.updatedAt.toISOString(),
     },
   }
-}
-
-function extractFileNameFromUrl(url: string): string | null {
-  const match = url.match(new RegExp(`${BUCKET_NAME}/([^?]+)`))
-  return match ? match[1] : null
 }
 
 export async function GET(

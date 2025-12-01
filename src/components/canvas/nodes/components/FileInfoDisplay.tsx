@@ -11,11 +11,9 @@ interface FileInfoDisplayProps {
   fileContent: string
   isLoadingContent: boolean
   isDeleting?: boolean
-  onTogglePreview: () => void
   onRemoveFile: () => void
   onContentChange: (content: string) => void
   onClosePreview: () => void
-  // Preview window props
   windowState: "normal" | "maximized" | "minimized"
   windowPosition: { x: number; y: number }
   windowSize: { width: number; height: number }
@@ -34,7 +32,6 @@ export function FileInfoDisplay({
   fileContent,
   isLoadingContent,
   isDeleting = false,
-  onTogglePreview,
   onRemoveFile,
   onContentChange,
   onClosePreview,
@@ -52,9 +49,8 @@ export function FileInfoDisplay({
   return (
     <div className="nodrag relative">
       <div
-        className="flex items-center gap-4 border rounded-2xl px-4 py-3 bg-white cursor-pointer"
+        className="flex items-center gap-4 border rounded-2xl px-4 py-3 bg-white"
         style={{ borderColor: colors.gray + "80" }}
-        onClick={onTogglePreview}
       >
         <div
           className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0"

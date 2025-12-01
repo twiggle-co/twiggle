@@ -13,7 +13,6 @@ interface NodeActionButtonsProps {
 export function NodeActionButtons({ className, onMinimize, onRemove, isMinimized, hasFile = false }: NodeActionButtonsProps) {
   const handleRemoveClick = (event: React.MouseEvent) => {
     event.stopPropagation()
-    // Always call onRemove - parent will handle showing warning if needed
     onRemove()
   }
 
@@ -25,7 +24,6 @@ export function NodeActionButtons({ className, onMinimize, onRemove, isMinimized
         style={{ backgroundColor: colors.warning }}
         onClick={(event) => {
           event.stopPropagation()
-          // onMinimize()
         }}
         aria-label={isMinimized ? "Restore node" : "Minimize node"}
       >

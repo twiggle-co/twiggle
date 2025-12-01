@@ -9,15 +9,11 @@ interface LoginModalProps {
   onClose: () => void
 }
 
-/**
- * Login modal component
- * Supports Google OAuth and email/password (if configured)
- */
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const backdropRef = useRef<HTMLDivElement>(null)
-  const mouseDownRef = useRef<{ target: EventTarget | null; time: number } | null>(null)
+  const mouseDownRef = useRef<EventTarget | null>(null)
 
   if (!isOpen) return null
 
@@ -48,17 +44,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         window.location.href = "/dashboard"
       }
     } catch (error) {
-      console.error("Login error:", error)
       alert("Login failed. Please try again.")
     }
   }
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) {
-      mouseDownRef.current = {
-        target: e.target,
-        time: Date.now(),
-      }
+      mouseDownRef.current = e.target
     }
   }
 
@@ -68,7 +60,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     
     if (
       e.target === backdropRef.current &&
-      mouseDownRef.current?.target === backdropRef.current &&
+      mouseDownRef.current === backdropRef.current &&
       !hasSelection
     ) {
       onClose()
@@ -82,15 +74,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       onMouseDown={handleBackdropMouseDown}
       onClick={handleBackdropClick}
     >
-      {/* Backdrop */}
       <div ref={backdropRef} className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
       
-      {/* Modal */}
       <div
         className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-black hover:text-gray-600 transition-colors"
@@ -100,7 +89,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </button>
 
         <div className="m-5 p-8">
-          {/* Google Sign In */}
           <button
             onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-400 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer mb-4"
@@ -126,12 +114,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <span className="text-black font-medium">Login with Google</span>
           </button>
 
-          {/* Separator */}
           <div className="flex items-center justify-center mb-4">
             <span className="text-black text-sm">or</span>
           </div>
 
-          {/* Email/Password Form */}
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div>
               <label className="block text-black text-xs font-medium mb-1">
@@ -172,7 +158,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </button>
           </form>
 
-          {/* Links */}
           <div className="mt-6 space-y-2 text-center">
             <a href="#" className="block text-[#118ab2] text-sm hover:underline">
               Use single sign-on

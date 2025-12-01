@@ -9,7 +9,6 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
-  FileText,
   Table,
   Wand2,
   BarChart3,
@@ -44,7 +43,7 @@ interface Category {
 const categories: Category[] = [
   {
     id: "files",
-    label: "File Nodes",
+    label: "File",
     nodes: [
       { id: "file-upload", label: "Upload File", icon: Upload },
       { id: "file-create", label: "Create New File", icon: FilePlus2 },
@@ -53,7 +52,7 @@ const categories: Category[] = [
   },
   {
     id: "agents",
-    label: "Agent / Tool Nodes",
+    label: "Agents",
     nodes: [
       { id: "summarize", label: "Summarize", icon: Sparkles },
       { id: "outline-extractor", label: "Outline Extractor", icon: List },
@@ -71,22 +70,16 @@ const categories: Category[] = [
   },
   {
     id: "utility",
-    label: "Utility / Config Nodes",
+    label: "Utility",
     nodes: [{ id: "prompt-template", label: "Prompt Template", icon: Code2 }],
   },
 ]
 
-/**
- * Handle drag start for node items
- */
 function onDragStart(event: DragEvent<HTMLButtonElement>, nodeType: CanvasNodeKind) {
   event.dataTransfer.setData("application/reactflow", nodeType)
   event.dataTransfer.effectAllowed = "move"
 }
 
-/**
- * Handle quick add for node items
- */
 function onQuickAdd(nodeType: CanvasNodeKind) {
   requestCanvasNode(nodeType)
 }
@@ -97,44 +90,41 @@ interface CollapsibleCategoryProps {
   onToggle: () => void
 }
 
-/**
- * Collapsible category component
- */
 function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategoryProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 transition-colors"
+        className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-gray-600 hover:text-gray-900 px-1.5 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
       >
         <span>{category.label}</span>
         {isOpen ? (
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
         ) : (
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3.5 w-3.5 text-gray-500" />
         )}
       </button>
       {isOpen && (
-        <div className="space-y-1 pl-2">
+        <div className="space-y-0.5 pl-1">
           {category.nodes.map((node) => {
             const Icon = node.icon
             return (
-              <div key={node.id} className="flex items-center gap-2">
+              <div key={node.id} className="flex items-center gap-1 group">
                 <button
-                  className="flex-1 flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white cursor-move text-left"
+                  className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white cursor-move text-left transition-colors"
                   draggable
                   onDragStart={(e) => onDragStart(e, node.id)}
                 >
-                  <Icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm">{node.label}</span>
+                  <Icon className="h-3.5 w-3.5 flex-shrink-0 text-gray-600" />
+                  <span className="text-xs text-gray-700">{node.label}</span>
                 </button>
                 <button
                   type="button"
                   aria-label={`Add ${node.label} node`}
-                  className="p-2 rounded-lg hover:bg-white text-gray-600"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-gray-200 text-gray-600 transition-opacity"
                   onClick={() => onQuickAdd(node.id)}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
             )
@@ -145,14 +135,8 @@ function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategory
   )
 }
 
-/**
- * Leaflet sidebar component
- * Displays draggable node categories for the canvas
- */
 export function LeafletSidebar() {
-  const [openCategories, setOpenCategories] = useState<Set<string>>(
-    new Set(categories.map((c) => c.id))
-  )
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
 
   const toggleCategory = (categoryId: string) => {
     setOpenCategories((prev) => {
@@ -167,16 +151,18 @@ export function LeafletSidebar() {
   }
 
   return (
-    <div className="w-64 border-r border-gray-200 p-4 flex flex-col gap-6 bg-white">
-      <div className="relative">
-        <input
-          placeholder="Search"
-          className="w-full px-8 py-2 rounded-full shadow-sm text-sm focus:outline-none placeholder:text-gray-400 bg-white border border-gray-300"
-        />
-        <Search className="absolute left-3 top-[9px] h-4 w-4 text-gray-500" />
+    <div className="w-48 border-r border-gray-200 bg-white flex flex-col h-full">
+      <div className="p-2 border-b border-gray-200 bg-white">
+        <div className="relative">
+          <input
+            placeholder="Search"
+            className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs focus:outline-none placeholder:text-gray-400 bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-300 focus:ring-1 focus:ring-gray-200 transition-colors"
+          />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        </div>
       </div>
 
-      <div className="space-y-4 text-sm text-gray-700 overflow-y-auto flex-1">
+      <div className="flex-1 overflow-y-auto p-2 space-y-3">
         {categories.map((category) => (
           <CollapsibleCategory
             key={category.id}

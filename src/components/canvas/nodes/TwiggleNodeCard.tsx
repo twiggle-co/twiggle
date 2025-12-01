@@ -18,21 +18,16 @@ import { FileInfoDisplay } from "./components/FileInfoDisplay"
 import { AgentNode } from "./components/AgentNode"
 
 export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
-  // Extract nodeType from id if not in data (backward compatibility)
   const nodeType = data.nodeType || (id.split("-").slice(0, -1).join("-") as typeof data.nodeType)
 
-  const [showPreview, setShowPreview] = useState(false)
   const [showConfirmRemove, setShowConfirmRemove] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [fileContent, setFileContent] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const prevShowPreviewRef = useRef(false)
 
-  // For file-create node
   const [fileName, setFileName] = useState(data.fileName || "")
   const [fileType, setFileType] = useState(data.fileType || "Markdown (.md)")
 
-  // Window management hook
   const {
     windowState,
     windowPosition,
@@ -47,7 +42,6 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
     initializeWindow,
   } = useDraggableWindow()
 
-  // File operations hook
   const {
     isUploading,
     isLoadingContent,
@@ -98,25 +92,23 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       try {
         const createResult = await createFileInGCS(fileName, fileType)
 
-        // Store file metadata with storage information
         const fileMeta = {
           name: createResult.fileName,
           size: createResult.size,
           type: createResult.type,
           storageUrl: createResult.storageUrl,
           fileId: createResult.fileId,
-          content: "", // Empty file initially
+          content: "",
         }
 
         if (data.onFileChange) {
           data.onFileChange(id, fileMeta)
         }
 
-        setFileContent("") // Empty content for new file
+        setFileContent("")
       } catch (error) {
         const errorMsg = `Error creating file: ${error instanceof Error ? error.message : "Unknown error"}`
-        console.error(errorMsg)
-        alert(errorMsg) // Show error to user
+        alert(errorMsg)
       }
     }
   }
@@ -127,33 +119,6 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
       data.onFileChange(id, { ...fileInfo, content: newContent })
     }
   }
-
-  // Load file content when preview opens
-  useEffect(() => {
-    if (!showPreview || !fileInfo) return
-
-    // Use existing content if available
-    if (fileInfo.content !== undefined) {
-      setFileContent(fileInfo.content)
-      return
-    }
-
-    // Fetch from GCS if we have a fileId
-    if (fileInfo.fileId) {
-      fetchFileFromGCS(fileInfo.fileId).then((content) => {
-        setFileContent(content)
-        if (data.onFileChange) {
-          data.onFileChange(id, { ...fileInfo, content })
-        }
-      })
-    }
-  }, [showPreview, fileInfo, fetchFileFromGCS, data, id])
-
-  // Initialize window when preview opens
-  useEffect(() => {
-    initializeWindow(showPreview, prevShowPreviewRef.current)
-    prevShowPreviewRef.current = showPreview
-  }, [showPreview, initializeWindow])
 
   return (
     <div
@@ -216,7 +181,6 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
             </div>
           )}
 
-          {/* File-create node custom UI */}
           {data.kind === "file" && nodeType === "file-create" && !showConfirmRemove && (
             <FileCreateNode
               fileName={fileName}
@@ -228,10 +192,8 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
             />
           )}
 
-          {/* File-output node UI */}
           {data.kind === "file" && nodeType === "file-output" && !showConfirmRemove && <FileOutputNode />}
 
-          {/* File-upload node UI */}
           {data.kind === "file" &&
             (nodeType === "file-upload" || (!nodeType && !data.fileName)) &&
             !fileInfo &&
@@ -244,25 +206,22 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
               />
             )}
 
-          {/* File info display */}
           {data.kind === "file" && fileInfo && !showConfirmRemove && (
             <FileInfoDisplay
               fileInfo={fileInfo}
-              showPreview={showPreview}
+              showPreview={false}
               fileContent={fileContent}
               isLoadingContent={isLoadingContent}
               isDeleting={isDeleting}
-              onTogglePreview={() => setShowPreview((prev) => !prev)}
               onRemoveFile={async () => {
                 if (fileInfo.fileId) {
                   await persistFile(null, fileInfo.fileId)
                 } else {
-                  // If no fileId, just remove from node (file might not be in database)
                   persistFile(null)
                 }
               }}
               onContentChange={handleContentChange}
-              onClosePreview={() => setShowPreview(false)}
+              onClosePreview={() => {}}
               windowState={windowState}
               windowPosition={windowPosition}
               windowSize={windowSize}
@@ -276,13 +235,10 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
             />
           )}
 
-          {/* Agent node UI */}
           {data.kind === "agent" && !showConfirmRemove && <AgentNode />}
         </>
       )}
 
-      {/* Handle logic: file-output has both input and output, others have output only */}
-      {/* Input handle: only file-output and non-file nodes */}
       {(data.kind !== "file" || nodeType === "file-output") && (
         <Handle
           type="target"
@@ -294,7 +250,6 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
         </Handle>
       )}
 
-      {/* Output handle: all nodes have output */}
       <Handle
         type="source"
         position={Position.Right}

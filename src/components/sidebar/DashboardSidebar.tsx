@@ -10,7 +10,6 @@ import {
   Grid3x3, 
   Monitor, 
   Trash2,
-  Bell,
   Plus,
   HardDrive
 } from "lucide-react"
@@ -78,46 +77,44 @@ export function DashboardSidebar() {
   ]
 
   return (
-    <div className="w-64 bg-[#404040] border-r border-[#2a2a2a] flex flex-col h-full">
-      <div className="p-4 border-b border-[#2a2a2a]">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            {session?.user?.profilePictureUrl || session?.user?.image ? (
+    <div className="w-60 bg-[#404040] border-r border-[#2a2a2a] flex flex-col h-full">
+      <div className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {session?.user?.profilePictureUrl ? (
               <img
-                src={(session.user.profilePictureUrl || session.user.image) ?? ""}
+                src={session.user.profilePictureUrl}
                 alt={userName}
-                className="h-10 w-10 rounded-full object-cover"
+                className="h-7 w-7 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-[#404040] font-semibold">
+              <div className="h-7 w-7 bg-white rounded-full flex items-center justify-center text-[#404040] font-semibold text-xs flex-shrink-0">
                 {userInitial}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{userName}</p>
+              <p className="text-xs font-medium text-white truncate">{userName}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <UserProfileDropdown />
-            {/* <button className="p-1.5 hover:bg-white/20 rounded-lg transition-colors" aria-label="Notifications">
-              <Bell className="h-4 w-4 text-white" />
-            </button> */}
           </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70" />
-          <input
-            type="text"
-            placeholder="Search"
-            className="w-full pl-10 pr-4 py-2 bg-white/20 border border-white/30 rounded-lg text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
-          />
+        <div className="relative pt-1">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/70 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search"
+              className="w-full pl-7 pr-2 py-1.5 bg-white/20 border border-white/30 rounded-lg text-xs text-white placeholder:text-white/70 focus:outline-none focus:ring-1 focus:ring-white/50 focus:border-white/50"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-2">
+        <div className="px-3 py-1 border-b border-[#2a2a2a]">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = item.active
@@ -125,52 +122,49 @@ export function DashboardSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg mb-0.5 transition-colors ${
                   isActive
                     ? "bg-white text-[#404040]"
                     : "text-white hover:bg-white/20"
                 }`}
               >
-                <Icon className="h-5 w-5" />
-                <span className="text-sm font-medium">{item.label}</span>
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs font-medium truncate">{item.label}</span>
               </Link>
             )
           })}
         </div>
 
-        {/* Team Section */}
-        <div className="px-4 py-2 mt-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-white/80" />
-            <span className="text-xs font-medium text-white/80">{userName}'s team</span>
-            <span className="ml-auto text-xs px-2 py-0.5 bg-white/30 text-white rounded">Free</span>
+        <div className="px-3 py-1 mt-1">
+          <div className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-white/80 flex-shrink-0" />
+            <span className="text-xs font-medium text-white/80 truncate min-w-0">{userName}'s team</span>
+            <span className="ml-auto text-[11px] px-1.5 py-0.5 bg-white/30 text-white rounded flex-shrink-0">Free</span>
           </div>
         </div>
 
-        {/* Project Links */}
-        <div className="p-2">
+        <div className="px-3 py-1">
           {projectItems.map((item) => {
             const Icon = item.icon
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center justify-between px-3 py-2 rounded-lg mb-1 text-white hover:bg-white/20 transition-colors group"
+                className="flex items-center justify-between px-2 py-1.5 rounded-lg mb-0.5 text-white hover:bg-white/20 transition-colors group"
               >
-                <div className="flex items-center gap-3">
-                  <Icon className="h-5 w-5" />
-                  <span className="text-sm font-medium">{item.label}</span>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-xs font-medium truncate">{item.label}</span>
                 </div>
                 {item.hasAdd && (
                   <button
                     onClick={(e) => {
                       e.preventDefault()
-                      // Handle add draft action
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/30 rounded transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/30 rounded transition-opacity flex-shrink-0"
                     aria-label="Add draft"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5" />
                   </button>
                 )}
               </Link>
@@ -179,19 +173,18 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      {/* Storage Usage Bar */}
-      <div className="p-4 border-t border-[#2a2a2a] bg-[#2a2a2a]">
-        <div className="flex items-center gap-2 mb-2">
-          <HardDrive className="h-4 w-4 text-white/80" />
+      <div className="p-2 border-t border-[#2a2a2a] bg-[#2a2a2a]">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <HardDrive className="h-3.5 w-3.5 text-white/80 flex-shrink-0" />
           <span className="text-xs font-medium text-white">Storage</span>
         </div>
         {isLoadingStorage ? (
-          <div className="text-xs text-white/70">Loading...</div>
+          <div className="text-[11px] text-white/70">Loading...</div>
         ) : storageUsage ? (
           <>
-            <div className="w-full bg-white/30 rounded-full h-2 mb-2">
+            <div className="w-full bg-white/30 rounded-full h-1.5 mb-1.5">
               <div
-                className={`h-2 rounded-full transition-all ${
+                className={`h-1.5 rounded-full transition-all ${
                   storageUsage.percentage >= 90
                     ? "bg-[#ef476f]"
                     : storageUsage.percentage >= 75
@@ -201,15 +194,15 @@ export function DashboardSidebar() {
                 style={{ width: `${Math.min(100, storageUsage.percentage)}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-xs text-white/90">
-              <span>
+            <div className="flex items-center justify-between text-[11px] text-white/90">
+              <span className="text-[11px] truncate min-w-0">
                 {formatBytes(storageUsage.used)} / {formatBytes(storageUsage.limit)}
               </span>
-              <span className="font-medium">{storageUsage.percentage.toFixed(1)}%</span>
+              <span className="text-[11px] font-medium flex-shrink-0 ml-1">{storageUsage.percentage.toFixed(1)}%</span>
             </div>
           </>
         ) : (
-          <div className="text-xs text-white/70">Unable to load storage</div>
+          <div className="text-[11px] text-white/70">Unable to load storage</div>
         )}
       </div>
     </div>

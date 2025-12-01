@@ -22,7 +22,6 @@ export function FileCreateNode({
 }: FileCreateNodeProps) {
   return (
     <div className="nodrag space-y-5 relative">
-      {/* Name Input */}
       <div className="relative">
         <input
           type="text"
@@ -33,7 +32,6 @@ export function FileCreateNode({
         />
       </div>
 
-      {/* Type Dropdown */}
       <div className="relative">
         <select
           value={fileType}
@@ -59,7 +57,6 @@ export function FileCreateNode({
         <ChevronDown className="absolute right-3 top-[0.8rem] w-4 h-4 text-white pointer-events-none" />
       </div>
 
-      {/* Create Button */}
       <div className="pt-1">
         <button
           type="button"

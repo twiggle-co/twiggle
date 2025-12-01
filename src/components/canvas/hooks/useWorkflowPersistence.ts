@@ -5,7 +5,7 @@ import type React from "react"
 import type { Edge } from "@xyflow/react"
 import type { TwiggleNode } from "../types"
 
-const AUTOSAVE_INTERVAL = 30000 // 30 seconds
+const AUTOSAVE_INTERVAL = 30000
 
 interface UseWorkflowPersistenceProps {
   projectId: string | null
@@ -121,14 +121,12 @@ export function useWorkflowPersistence({
         setHasUnsavedChanges(false)
       }
     } catch (error) {
-      console.error("Error loading workflow:", error)
     } finally {
       setIsLoading(false)
       isInitialLoadRef.current = false
     }
   }, [projectId, restoreNodeCallbacks, setNodes, setEdges, generateWorkflowHash])
 
-  // Save workflow to API
   const saveWorkflow = useCallback(
     async (silent: boolean = false) => {
       if (!projectId) return
@@ -138,7 +136,6 @@ export function useWorkflowPersistence({
       }
 
       try {
-        // Sanitize nodes before saving (remove callbacks)
         const sanitizedNodes = sanitizeNodesForSave(nodes)
 
         const response = await fetch(`/api/projects/${projectId}/workflow`, {
@@ -162,12 +159,7 @@ export function useWorkflowPersistence({
         const hash = generateWorkflowHash(nodes, edges)
         setLastSavedHash(hash)
         setHasUnsavedChanges(false)
-
-        if (!silent) {
-          console.log("Workflow saved successfully")
-        }
       } catch (error) {
-        console.error("Error saving workflow:", error)
         if (!silent) {
           alert(
             error instanceof Error

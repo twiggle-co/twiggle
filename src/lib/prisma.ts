@@ -2,10 +2,6 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 
-/**
- * Prisma client singleton
- * Prevents multiple instances in development
- */
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }

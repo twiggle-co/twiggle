@@ -24,17 +24,13 @@ export function useCanvasNodes({
         const nodeToRemove = prevNodes.find((node) => node.id === nodeId)
         const fileId = nodeToRemove?.data?.file?.fileId
 
-        // Delete file asynchronously (fire and forget)
         if (fileId) {
-          fetch(`/api/files/${fileId}`, { method: "DELETE" }).catch((error) => {
-            console.error(`Error deleting file ${fileId}:`, error)
-          })
+          fetch(`/api/files/${fileId}`, { method: "DELETE" }).catch(() => {})
         }
 
         return prevNodes.filter((node) => node.id !== nodeId)
       })
 
-      // Remove connected edges
       setEdges((prev) => prev.filter((edge) => edge.source !== nodeId && edge.target !== nodeId))
     },
     [setNodes, setEdges]
@@ -85,7 +81,6 @@ export function useCanvasNodes({
     [projectId, handleFileChange, handleRemoveNode, setNodes]
   )
 
-  // Restore nodes with callbacks when loading from API
   const restoreNodeCallbacks = useCallback(
     (nodes: TwiggleNode[]): TwiggleNode[] => {
       return nodes.map((node) => ({

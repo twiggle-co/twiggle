@@ -20,7 +20,6 @@ export function FileUploadNode({ onDrop, onDragOver, onBrowseClick, isUploading 
     >
       <UploadCloud className="mx-auto h-12 w-12" style={{ color: colors.primary }} />
       <p className="text-sm mt-1 text-gray-600">Select your file or drag and drop</p>
-      {/* <p className="text-[9px] text-gray-400">PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, CSV, TXT, MD, JSON, YAML, HTML, XML, TOML</p> */}
       <button
         type="button"
         disabled={isUploading}

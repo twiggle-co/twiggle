@@ -52,7 +52,7 @@ export function useDraggableWindow() {
 
       setWindowPosition({ x: newX, y: newY })
     },
-    [isDragging, dragOffset, windowSize, getCanvasBounds]
+    [isDragging, dragOffset, windowSize]
   )
 
   const handleWindowDragEnd = useCallback(() => {
@@ -126,7 +126,7 @@ export function useDraggableWindow() {
       setWindowSize({ width: newWidth, height: newHeight })
       setWindowPosition({ x: newX, y: newY })
     },
-    [isResizing, resizeDirection, resizeStart, getCanvasBounds]
+    [isResizing, resizeDirection, resizeStart]
   )
 
   const handleResizeEnd = useCallback(() => {
@@ -136,7 +136,6 @@ export function useDraggableWindow() {
   const handleMaximize = useCallback(() => {
     if (windowState === "maximized") {
       setWindowState("normal")
-      // Could restore previous size/position here
     } else {
       setWindowState("maximized")
       const canvasBounds = getCanvasBounds()
@@ -146,7 +145,7 @@ export function useDraggableWindow() {
       })
       setWindowPosition({ x: canvasBounds.left, y: canvasBounds.top })
     }
-  }, [windowState, getCanvasBounds])
+  }, [windowState])
 
   const resetWindow = useCallback(() => {
     setWindowState("normal")
@@ -164,7 +163,7 @@ export function useDraggableWindow() {
         y: canvasBounds.top + (canvasBounds.height - 400) / 2,
       })
     }
-  }, [getCanvasBounds])
+  }, [])
 
   // Drag event listeners
   useEffect(() => {

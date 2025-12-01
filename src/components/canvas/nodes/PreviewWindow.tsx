@@ -117,7 +117,6 @@ export function PreviewWindow({
         </div>
       </div>
       
-      {/* Window Content */}
       {windowState !== "minimized" && (
         <div className="relative bg-white" style={{ height: `calc(100% - 48px)` }}>
           <textarea
@@ -136,10 +135,8 @@ export function PreviewWindow({
         </div>
       )}
       
-      {/* Resize Handles */}
       {windowState === "normal" && (
         <>
-          {/* Corner handles */}
           <div
             className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize z-10"
             onMouseDown={(e) => onResizeStart(e, "nw")}
@@ -156,7 +153,6 @@ export function PreviewWindow({
             className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-10"
             onMouseDown={(e) => onResizeStart(e, "se")}
           />
-          {/* Edge handles */}
           <div
             className="absolute top-0 left-3 right-3 h-1 cursor-ns-resize z-10"
             onMouseDown={(e) => onResizeStart(e, "n")}

@@ -68,16 +68,11 @@ export async function DELETE(
       )
     }
 
-    // Find file in database
     const fileRecord = await prisma.file.findUnique({
       where: { fileId },
     })
 
-    // If file doesn't exist in database, check if it exists in GCS and clean it up
     if (!fileRecord) {
-      console.warn(`File record not found in database for fileId: ${fileId}, checking GCS...`)
-      
-      // Try to clean up from GCS if it exists there
       try {
         const storage = getStorageInstance()
         const bucket = storage.bucket(BUCKET_NAME)
@@ -85,20 +80,16 @@ export async function DELETE(
         
         if (files.length > 0) {
           await Promise.all(files.map((file) => file.delete()))
-          console.log(`Cleaned up ${files.length} orphaned file(s) from GCS for fileId: ${fileId}`)
         }
       } catch (gcsError) {
-        console.error("Error cleaning up orphaned file from GCS:", gcsError)
       }
       
-      // Return success even if file wasn't in database (idempotent deletion)
       return NextResponse.json({ 
         success: true, 
         message: "File not found in database (may have already been deleted)" 
       })
     }
 
-    // Verify user owns the file
     if (fileRecord.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -106,58 +97,36 @@ export async function DELETE(
       )
     }
 
-    // Delete from Google Cloud Storage using the storageUrl
     try {
       if (fileRecord.storageUrl) {
         const storage = getStorageInstance()
         const bucket = storage.bucket(BUCKET_NAME)
         
-        // Extract the actual file name from the storageUrl
         const fileName = extractFileNameFromUrl(fileRecord.storageUrl)
         const file = bucket.file(fileName)
         
-        // Check if file exists and delete it
         const [exists] = await file.exists()
         if (exists) {
           await file.delete()
-          console.log(`Successfully deleted file from GCS: ${fileName}`)
-        } else {
-          console.warn(`File not found in GCS: ${fileName}, but continuing with database deletion`)
         }
       } else {
-        console.warn(`No storageUrl found for fileId: ${fileId}, skipping GCS deletion`)
-        
-        // Try fallback: search by prefix (for backwards compatibility)
         const storage = getStorageInstance()
         const bucket = storage.bucket(BUCKET_NAME)
         const [files] = await bucket.getFiles({ prefix: fileId })
         
         if (files.length > 0) {
           await Promise.all(files.map((file) => file.delete()))
-          console.log(`Deleted ${files.length} file(s) from GCS using prefix search fallback`)
         }
       }
     } catch (gcsError: any) {
-      // Handle 404 errors gracefully (file already deleted)
       if (gcsError?.code === 404) {
-        console.warn(`File not found in GCS (may have already been deleted): ${fileId}`)
       } else {
-        console.error("Error deleting file from GCS:", gcsError)
       }
-      // Continue with database deletion even if GCS deletion fails
     }
 
-    // Delete from database using deleteMany (idempotent - doesn't throw if record doesn't exist)
     const deleteResult = await prisma.file.deleteMany({
       where: { fileId },
     })
-    
-    if (deleteResult.count > 0) {
-      console.log(`Successfully deleted file record from database: ${fileId}`)
-    } else {
-      console.warn(`File record not found in database (may have already been deleted): ${fileId}`)
-      // Still return success (idempotent deletion)
-    }
 
     return NextResponse.json({ success: true, message: "File deleted successfully" })
   } catch (error) {

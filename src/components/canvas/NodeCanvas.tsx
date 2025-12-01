@@ -34,16 +34,17 @@ interface InnerCanvasProps {
   projectId: string | null
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
   onLoadingChange?: (isLoading: boolean) => void
+  onNodesChange?: (nodes: TwiggleNode[]) => void
+  className?: string
 }
 
-function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: InnerCanvasProps) {
+function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange, onNodesChange: onNodesChangeCallback, className }: InnerCanvasProps) {
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null)
   const reactFlow = useReactFlow<TwiggleNode, Edge>()
   const [nodes, setNodes, onNodesChange] = useNodesState<TwiggleNode>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [showFileWarning, setShowFileWarning] = useState(false)
 
-  // Node management
   const { handleRemoveNode, handleFileChange, addTwiggleNode, restoreNodeCallbacks } =
     useCanvasNodes({
       projectId,
@@ -51,10 +52,8 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: Inn
       setEdges,
     })
 
-  // Edge management
   const { onConnect, onEdgesDelete, onEdgeDoubleClick } = useCanvasEdges({ setEdges })
 
-  // Workflow persistence (save/load/autosave)
   const { isLoading, isSaving, hasUnsavedChanges, saveWorkflow, loadWorkflow } =
     useWorkflowPersistence({
       projectId,
@@ -67,10 +66,8 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: Inn
       onLoadingChange,
     })
 
-  // Keyboard handlers
   useCanvasKeyboard({ edges, onEdgesDelete })
 
-  // Drag and drop handlers
   const onDragOver = (event: React.DragEvent) => {
     event.preventDefault()
     event.dataTransfer.dropEffect = "move"
@@ -88,7 +85,6 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: Inn
     addTwiggleNode(dragType as any, position)
   }
 
-  // Handle programmatic node addition via events
   useEffect(() => {
     const handler = (event: Event) => {
       const { detail } = event as CustomEvent<CanvasAddNodeDetail>
@@ -107,7 +103,6 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: Inn
     return () => window.removeEventListener(CANVAS_ADD_NODE_EVENT, handler as EventListener)
   }, [addTwiggleNode, reactFlow])
 
-  // Handle file warning event
   useEffect(() => {
     let warningTimer: NodeJS.Timeout | null = null
 
@@ -124,15 +119,18 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange }: Inn
     }
   }, [])
 
-  // Initial workflow load
   useEffect(() => {
     if (projectId) {
       loadWorkflow()
     }
   }, [projectId, loadWorkflow])
 
+  useEffect(() => {
+    onNodesChangeCallback?.(nodes)
+  }, [nodes, onNodesChangeCallback])
+
   return (
-    <div ref={reactFlowWrapperRef} className="flex-1 relative" style={{ backgroundColor: colors.background }}>
+    <div ref={reactFlowWrapperRef} className={`flex-1 relative ${className || ""}`} style={{ backgroundColor: colors.background }}>
       {isLoading && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white px-4 py-2 rounded-lg shadow-lg">
           <span className="text-sm text-gray-700">Loading workflow...</span>
@@ -200,15 +198,25 @@ interface NodeCanvasProps {
   projectId?: string | null
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void
   onLoadingChange?: (isLoading: boolean) => void
+  onNodesChange?: (nodes: TwiggleNode[]) => void
+  className?: string
 }
 
-export function NodeCanvas({ projectId = null, onUnsavedChangesChange, onLoadingChange }: NodeCanvasProps) {
+export function NodeCanvas({ 
+  projectId = null, 
+  onUnsavedChangesChange, 
+  onLoadingChange,
+  onNodesChange,
+  className,
+}: NodeCanvasProps) {
   return (
     <ReactFlowProvider>
       <InnerCanvas
         projectId={projectId}
         onUnsavedChangesChange={onUnsavedChangesChange}
         onLoadingChange={onLoadingChange}
+        onNodesChange={onNodesChange}
+        className={className}
       />
     </ReactFlowProvider>
   )

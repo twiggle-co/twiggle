@@ -18,7 +18,6 @@ export const authOptions = {
     async session({ session, user }: { session: any; user: any }) {
       if (session.user && user) {
         session.user.id = user.id
-        // Fetch user from database to get profilePictureUrl
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { profilePictureUrl: true },

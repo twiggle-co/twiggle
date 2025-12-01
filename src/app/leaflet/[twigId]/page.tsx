@@ -1,9 +1,11 @@
 "use client"
 
 import { use, useEffect, useState } from "react"
-import { LeafletTopNav } from "@/components/navigation/LeafletTopNav"
-import { LeafletSidebar } from "@/components/sidebar/LeafletSidebar"
-import { NodeCanvas } from "@/components/canvas/NodeCanvas"
+import { LeafletTopNav, type ViewMode } from "@/components/navigation/LeafletTopNav"
+import { NodeView } from "@/components/canvas/NodeView"
+import { FileViewerPanel } from "@/components/canvas/FileViewerPanel"
+import { ResizablePanels } from "@/components/canvas/ResizablePanels"
+import type { TwiggleNode } from "@/components/canvas/types"
 
 export default function LeafletPage({
   params,
@@ -12,9 +14,10 @@ export default function LeafletPage({
 }) {
   const { twigId } = use(params)
   const [projectName, setProjectName] = useState("Loading...")
-  const [isLoading, setIsLoading] = useState(true)
   const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(true)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>("mixed")
+  const [nodes, setNodes] = useState<TwiggleNode[]>([])
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -27,8 +30,6 @@ export default function LeafletPage({
         setProjectName(project.title || "Untitled Project")
       } catch {
         setProjectName("Project")
-      } finally {
-        setIsLoading(false)
       }
     }
 
@@ -39,17 +40,28 @@ export default function LeafletPage({
 
   return (
     <div className="h-screen w-screen flex flex-col">
-      <LeafletTopNav 
-        projectName={projectName} 
+      <LeafletTopNav
+        projectName={projectName}
         twigId={twigId}
         hasUnsavedChanges={hasUnsavedChanges}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
       <div className="flex flex-1 overflow-hidden">
-        {!isLoadingWorkflow && <LeafletSidebar />}
-        <NodeCanvas 
-          projectId={twigId} 
-          onUnsavedChangesChange={setHasUnsavedChanges}
-          onLoadingChange={setIsLoadingWorkflow}
+        <ResizablePanels
+          leftPanel={
+            <NodeView
+              projectId={twigId}
+              isLoadingWorkflow={isLoadingWorkflow}
+              onUnsavedChangesChange={setHasUnsavedChanges}
+              onLoadingChange={setIsLoadingWorkflow}
+              onNodesChange={setNodes}
+              className="h-full"
+            />
+          }
+          rightPanel={<FileViewerPanel />}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
       </div>
     </div>

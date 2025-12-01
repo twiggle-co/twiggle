@@ -4,10 +4,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: "default" | "outline"
 }
 
-/**
- * Button component
- * Reusable button with variants
- */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className = "", variant = "default", ...props }, ref) => {
     const baseStyles = 

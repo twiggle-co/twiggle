@@ -3,23 +3,13 @@ import { auth } from "@/app/api/auth/[...nextauth]/route"
 import { prisma } from "./prisma"
 import { getStorageInstance, BUCKET_NAME, extractFileNameFromUrl } from "./gcs"
 
-/**
- * Storage limit: 1GB
- */
 const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
 
-/**
- * Get the authenticated user session
- * Returns null if not authenticated
- */
 export async function getAuthenticatedUser() {
   const session = await auth()
   return session?.user?.id ? session : null
 }
 
-/**
- * Require authentication - throws error response if not authenticated
- */
 export async function requireAuth(): Promise<{ user: { id: string } }> {
   const session = await getAuthenticatedUser()
   if (!session) {
@@ -28,9 +18,6 @@ export async function requireAuth(): Promise<{ user: { id: string } }> {
   return session
 }
 
-/**
- * Get file size from GCS by URL
- */
 async function getFileSizeFromGCS(storageUrl: string | null): Promise<number> {
   if (!storageUrl) return 0
 
@@ -47,14 +34,10 @@ async function getFileSizeFromGCS(storageUrl: string | null): Promise<number> {
     const [metadata] = await file.getMetadata()
     return Number(metadata.size || 0)
   } catch (error) {
-    console.error("Error getting file size from GCS:", error)
     return 0
   }
 }
 
-/**
- * Calculate total storage usage for a user
- */
 export async function calculateStorageUsage(userId: string) {
   const [files, projects, user] = await Promise.all([
     prisma.file.findMany({
@@ -75,13 +58,11 @@ export async function calculateStorageUsage(userId: string) {
     }),
   ])
 
-  // File storage: files uploaded by user (includes files in project folders)
   const fileStorageBytes = files.reduce(
     (sum, file) => sum + Number(file.size),
     0
   )
 
-  // Project metadata storage: titles and descriptions
   const projectMetadataBytes = projects.reduce((sum, project) => {
     const titleBytes = Buffer.byteLength(project.title, "utf8")
     const descBytes = project.description
@@ -90,7 +71,6 @@ export async function calculateStorageUsage(userId: string) {
     return sum + titleBytes + descBytes
   }, 0)
 
-  // Workflow JSON files storage: get sizes from GCS
   const workflowFileSizes = await Promise.all(
     projects
       .filter(p => p.workflowDataUrl)
@@ -98,7 +78,6 @@ export async function calculateStorageUsage(userId: string) {
   )
   const workflowStorageBytes = workflowFileSizes.reduce((sum, size) => sum + size, 0)
 
-  // Profile picture storage: get size from GCS
   const profilePictureBytes = await getFileSizeFromGCS(user?.profilePictureUrl || null)
 
   const total = fileStorageBytes + projectMetadataBytes + workflowStorageBytes + profilePictureBytes
@@ -111,9 +90,6 @@ export async function calculateStorageUsage(userId: string) {
   }
 }
 
-/**
- * Check if adding bytes would exceed storage limit
- */
 export async function checkStorageLimit(
   userId: string,
   additionalBytes: number
@@ -134,9 +110,6 @@ export async function checkStorageLimit(
   return { exceeded: false }
 }
 
-/**
- * Verify project exists and belongs to user
- */
 export async function verifyProjectAccess(
   projectId: string,
   userId: string
@@ -158,26 +131,17 @@ export async function verifyProjectAccess(
   return project
 }
 
-/**
- * Error types for better error handling
- */
 type ApiError = {
   code?: string | number
   message?: string
   response?: { status?: number }
 }
 
-/**
- * Handle API errors consistently
- */
 export function handleApiError(error: unknown, defaultMessage: string) {
-  console.error(defaultMessage, error)
-
   const errorObj = error as ApiError
   let message = defaultMessage
   let statusCode = 500
 
-  // GCS credential errors
   if (
     errorObj?.message?.includes("No Google Cloud Storage credentials") ||
     errorObj?.message?.includes("GCS_CREDENTIALS") ||
@@ -187,20 +151,14 @@ export function handleApiError(error: unknown, defaultMessage: string) {
       "Google Cloud Storage credentials are not configured. " +
       "Please set GCS_CREDENTIALS or GCS_KEY_FILENAME in your environment variables."
     statusCode = 500
-  }
-  // Permission errors
-  else if (errorObj?.code === 403 || errorObj?.response?.status === 403) {
+  } else if (errorObj?.code === 403 || errorObj?.response?.status === 403) {
     message =
       "Permission denied: The service account does not have the required permissions."
     statusCode = 403
-  }
-  // Not found errors
-  else if (errorObj?.code === 404 || errorObj?.response?.status === 404) {
+  } else if (errorObj?.code === 404 || errorObj?.response?.status === 404) {
     message = errorObj?.message || "Resource not found"
     statusCode = 404
-  }
-  // Other errors
-  else if (errorObj?.message) {
+  } else if (errorObj?.message) {
     message = errorObj.message
   }
 
@@ -213,9 +171,6 @@ export function handleApiError(error: unknown, defaultMessage: string) {
   )
 }
 
-/**
- * Get storage usage response
- */
 export async function getStorageUsageResponse(userId: string) {
   const { fileStorage, projectStorage, profilePictureStorage, total } =
     await calculateStorageUsage(userId)

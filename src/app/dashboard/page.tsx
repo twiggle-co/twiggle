@@ -156,7 +156,7 @@ export default function DashboardPage() {
             <p className="text-gray-500 mb-4">No projects yet</p>
             <Link
               href="/dashboard/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#06d6a0] text-white rounded-lg hover:bg-[#05C090]"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#ef476f] text-white rounded-lg hover:bg-[#d63d5f]"
             >
               <Plus className="h-4 w-4" />
               Create your first project
@@ -175,7 +175,6 @@ export default function DashboardPage() {
                 key={project.id}
                 id={project.id}
                 title={project.title}
-                description={project.description}
                 updatedAt={project.updatedAt}
               />
             ))}

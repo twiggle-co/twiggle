@@ -22,7 +22,7 @@ export function HomeTopNav() {
           <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black">
             <Leaf className="h-5 w-5" color="#118ab2" strokeWidth={2.5} />
           </div>
-          <span className="font-mono text-xl hover:underline ml-1">Twiggle</span>
+          <span className="font-logo text-3xl hover:underline ml-1">Twiggle</span>
         </button>
 
         <div className="flex items-center gap-4">
@@ -32,22 +32,23 @@ export function HomeTopNav() {
               className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black hover:opacity-90 transition-opacity overflow-hidden"
               title={session?.user?.email || "User"}
             >
-              {session.user?.profilePictureUrl || session.user?.image ? (
+              {session.user?.profilePictureUrl ? (
                 <img
-                  src={(session.user.profilePictureUrl || session.user.image) ?? ""}
+                  src={session.user.profilePictureUrl}
                   alt={session.user.name || "User"}
                   className="h-10 w-10 rounded-full border-2 border-white object-cover"
                 />
               ) : (
                 <span className="text-[#118ab2] font-semibold">
-                  {session.user?.name?.charAt(0).toUpperCase() || "U"}
+                  {session.user?.name?.charAt(0).toUpperCase() || 
+                   session.user?.email?.charAt(0).toUpperCase() || "U"}
                 </span>
               )}
             </button>
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="font-mono hover:underline cursor-pointer text-xl"
+              className="hover:underline cursor-pointer text-xl"
             >
               Login
             </button>

@@ -1,11 +1,9 @@
 "use client"
 
 export type CanvasNodeKind =
-  // File Nodes
   | "file-upload"
   | "file-create"
   | "file-output"
-  // Agent / Tool Nodes
   | "summarize"
   | "outline-extractor"
   | "table-extractor"
@@ -18,7 +16,6 @@ export type CanvasNodeKind =
   | "slide-design"
   | "email-draft"
   | "follow-up-email"
-  // Utility / Config Nodes
   | "prompt-template"
 
 export type CanvasAddNodeDetail = {

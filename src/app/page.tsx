@@ -4,7 +4,7 @@ import { HomeTopNav } from "@/components/navigation/HomeTopNav"
 import { useState, useCallback, useEffect } from 'react'
 import { ReactFlow, Background, Controls, applyNodeChanges, applyEdgeChanges, BackgroundVariant, ReactFlowProvider, useReactFlow, type Node, type Edge, Handle, Position } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { colorPalette, colors } from '@/lib/colors'
+import { colors } from '@/lib/colors'
 
 const TWIGGLE_LETTERS = ['T', 'W', 'I', 'G', 'G', 'L', 'E'] as const
 
@@ -29,16 +29,14 @@ function generateTwiggleGame(): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
   
-  // Fixed positions matching the design: T, W, I, G, G, L, E
-  // Colors: Yellow, Blue, Green, Red, Green, Blue, Yellow
   const nodePositions = [
-    { x: -200, y: -200, color: colors.yellow },  // T - top-left, yellow
-    { x: 0, y: -200, color: colors.blue },       // W - top-right, blue
-    { x: -200, y: 0, color: colors.green },      // I - middle-left, green
-    { x: 0, y: 0, color: colors.red },            // G (first) - middle-center, red
-    { x: 0, y: 200, color: colors.green },        // G (second) - bottom-center, green
-    { x: 200, y: 0, color: colors.blue },         // L - middle-right, blue
-    { x: 200, y: 200, color: colors.yellow },    // E - bottom-right, yellow
+    { x: -200, y: -200, color: colors.yellow },
+    { x: 0, y: -200, color: colors.blue },
+    { x: -200, y: 0, color: colors.green },
+    { x: 0, y: 0, color: colors.red },
+    { x: 0, y: 200, color: colors.green },
+    { x: 200, y: 0, color: colors.blue },
+    { x: 200, y: 200, color: colors.yellow },
   ]
 
   for (let i = 0; i < TWIGGLE_LETTERS.length; i++) {
@@ -57,7 +55,6 @@ function generateTwiggleGame(): { nodes: Node[]; edges: Edge[] } {
     })
   }
 
-  // Create edges in order: T -> W -> I -> G -> G -> L -> E
   for (let i = 0; i < TWIGGLE_LETTERS.length - 1; i++) {
     edges.push({
       id: `edge-${i}`,
@@ -132,13 +129,10 @@ export default function HomePage() {
         </div>
         <div className="w-1/3 bg-white p-8 border-l border-gray-200 flex flex-col">
           <div className="flex-1 overflow-y-auto">
-            <h1 className="text-3xl font-mono font-bold text-gray-900 mb-6">
-              <span className="hover:underline cursor-pointer">Twiggle</span>
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">
+              <span className="font-logo hover:underline cursor-pointer">Twiggle</span>
             </h1>
-            {/* <p className="text-xl font-mono text-gray-800 mb-8 leading-relaxed font-light">
-              Unify your work. Amplify your productivity.
-            </p> */}
-            <div className="space-y-6 text-gray-700 font-mono">
+            <div className="space-y-6 text-gray-700">
               <p className="leading-relaxed">
                 Twiggle revolutionizes how you work by unifying documents, spreadsheets, presentations, and files into a single, intelligent workspace. Break free from app-switching and fragmented workflows—everything you need is connected, accessible, and organized in one powerful platform.
               </p>
@@ -164,7 +158,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <p className="leading-relaxed font-mono text-gray-600 mt-6 pt-6 border-t border-gray-200 text-sm flex-shrink-0">
+          <p className="leading-relaxed text-gray-600 mt-6 pt-6 border-t border-gray-200 text-sm flex-shrink-0">
             The convergence of productivity tools—documents, spreadsheets, presentations, and file management—reimagined as one cohesive, intelligent workspace where every connection matters.
           </p>
         </div>

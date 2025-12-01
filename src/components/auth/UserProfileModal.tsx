@@ -21,16 +21,13 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
-  const mouseDownRef = useRef<{ target: EventTarget | null; time: number } | null>(null)
+  const mouseDownRef = useRef<EventTarget | null>(null)
 
   if (!isOpen) return null
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) {
-      mouseDownRef.current = {
-        target: e.target,
-        time: Date.now(),
-      }
+      mouseDownRef.current = e.target
     }
   }
 
@@ -40,7 +37,7 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
     
     if (
       e.target === backdropRef.current &&
-      mouseDownRef.current?.target === backdropRef.current &&
+      mouseDownRef.current === backdropRef.current &&
       !hasSelection
     ) {
       onClose()
@@ -60,20 +57,16 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type - only allow image files
     if (!file.type.startsWith("image/")) {
       setUploadError("Please select an image file. Only image files are allowed.")
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
       return
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setUploadError("File size must be less than 5MB")
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -97,14 +90,12 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
         throw new Error(error.error || "Failed to upload profile picture")
       }
 
-      // Refresh session to get updated profile picture
       await update()
       router.refresh()
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Failed to upload profile picture")
     } finally {
       setIsUploading(false)
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -127,7 +118,6 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
         throw new Error(error.error || "Failed to remove profile picture")
       }
 
-      // Refresh session to get updated profile picture (should be null now)
       await update()
       router.refresh()
     } catch (error) {
@@ -141,11 +131,7 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
   const userName = session?.user?.name || "User"
   const userEmail = session?.user?.email || ""
   const userInitial = userName.charAt(0).toUpperCase()
-  
-  // Get profile picture URL - prefer custom, then OAuth image, then fallback to initial
-  const profilePictureUrl = session?.user?.profilePictureUrl || session?.user?.image
-  // Check if user has uploaded a custom profile picture (not just OAuth image)
-  const hasCustomProfilePicture = !!session?.user?.profilePictureUrl
+  const profilePictureUrl = session?.user?.profilePictureUrl
 
   return (
     <div
@@ -204,7 +190,7 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
                       {userInitial}
                     </div>
                   )}
-                  {hasCustomProfilePicture ? (
+                  {profilePictureUrl ? (
                     <button
                       onClick={handleRemovePicture}
                       disabled={isRemoving}
@@ -268,32 +254,6 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
                     </button>
                   </div>
                 </div>
-
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Theme
-                  </label>
-                  <select className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#118ab2]">
-                    <option>System theme</option>
-                    <option>Light</option>
-                    <option>Dark</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Enhance contrast
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      When enabled, contrast between text and controls and their backgrounds will be increased
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#118ab2] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#118ab2]"></div>
-                  </label>
-                </div> */}
               </div>
             </div>
           )}

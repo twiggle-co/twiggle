@@ -3,10 +3,6 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 
-/**
- * Login button component
- * Shows sign in button when logged out, sign out button when logged in
- */
 export function LoginButton() {
   const { data: session, status } = useSession()
 

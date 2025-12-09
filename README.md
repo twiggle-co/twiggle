@@ -56,7 +56,8 @@ npm start
 
 Detailed setup guides are available in the [`/docs`](./docs) directory:
 
-- [Docker Setup](./docs/guides/docker-setup.md) - **Recommended for teams** - Docker setup for local development
+- **[Onboarding Guide](./docs/guides/onboarding.md)** - **NEW DEVELOPERS START HERE** - Complete setup process
+- [Docker Setup](./docs/guides/docker-setup.md) - Docker setup for local development (recommended for teams)
 - [Database Setup](./docs/guides/database-setup.md) - Prisma + Vercel Postgres
 - [Database Migrations](./docs/guides/database-migrations.md) - Safely modify database schema
 - [Google Authentication Setup](./docs/guides/google-auth.md) - Google OAuth configuration

@@ -2,6 +2,10 @@
 
 Complete documentation for the Twiggle Frontend application.
 
+## 🚀 New Developer?
+
+**Start here:** [Onboarding Guide](./guides/onboarding.md) - Complete setup guide for new team members
+
 ## Quick Start
 
 1. **Set up database** → [Database Setup](./guides/database-setup.md) or [Docker Setup](./guides/docker-setup.md)
@@ -11,6 +15,9 @@ Complete documentation for the Twiggle Frontend application.
 5. **Start development** → `npm run dev`
 
 ## Setup Guides
+
+### Getting Started
+- **[Onboarding Guide](./guides/onboarding.md)** - **NEW DEVELOPERS START HERE** - Complete setup and onboarding process
 
 ### Development Environment
 - **[Docker Setup](./guides/docker-setup.md)** - Docker setup for local development (recommended for teams)

@@ -122,7 +122,7 @@ export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
 
   return (
     <div
-      className={`relative w-60 bg-white rounded-[28px] shadow-[0_15px_35px_rgba(19,45,70,0.15)] border px-5 ${
+      className={`relative w-72 bg-white rounded-[28px] shadow-[0_15px_35px_rgba(19,45,70,0.15)] border px-5 ${
         isMinimized ? "py-3" : "py-5"
       }`}
       style={{ borderColor: colors.gray + "80" }}

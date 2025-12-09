@@ -185,7 +185,11 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange, onNod
         onDragOver={onDragOver}
         defaultEdgeOptions={{ deletable: true, selectable: true }}
         deleteKeyCode={['Backspace', 'Delete']}
+        defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
+        minZoom={0.2}
+        maxZoom={2}
         fitView
+        fitViewOptions={{ padding: 0.2, minZoom: 0.3, maxZoom: 1.5 }}
       >
         <Background id="1" gap={20} color="#404040" variant={BackgroundVariant.Dots} />
         <Controls />

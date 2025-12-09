@@ -20,6 +20,18 @@
 
 ### Local Development
 
+#### If Using Docker
+
+Add to `.env.development`:
+
+```env
+GCS_PROJECT_ID=your-project-id
+GCS_KEY_FILENAME=key/your-service-account-key.json
+GCS_BUCKET_NAME=your-bucket-name
+```
+
+#### If Not Using Docker
+
 Add to `.env.local`:
 
 ```env
@@ -36,7 +48,7 @@ Add to Vercel environment variables:
 2. **GCS_BUCKET_NAME**: Your bucket name
 3. **GCS_CREDENTIALS**: Base64-encoded JSON key
 
-**Generate base64:**
+<!-- OPTIONAL -- **Generate base64:**
 ```bash
 # Mac/Linux
 cat key/your-service-account-key.json | base64
@@ -45,6 +57,6 @@ cat key/your-service-account-key.json | base64
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("key\your-service-account-key.json"))
 ```
 
-Paste the entire base64 output as `GCS_CREDENTIALS` value.
+Paste the entire base64 output as `GCS_CREDENTIALS` value. -->
 
 **Redeploy** after adding environment variables.

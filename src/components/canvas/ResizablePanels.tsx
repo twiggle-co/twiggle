@@ -33,9 +33,9 @@ export function ResizablePanels({
       case "file-only":
         return 0
       case "mixed":
-        return 50
+        return 66.67
       default:
-        return 50
+        return 66.67
     }
   }
 

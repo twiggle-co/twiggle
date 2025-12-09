@@ -9,6 +9,8 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Table,
   Wand2,
   BarChart3,
@@ -23,6 +25,9 @@ import {
   Sparkles,
   List,
   Eraser,
+  Folder,
+  Bot,
+  Settings,
 } from "lucide-react"
 import { DragEvent } from "react"
 import { requestCanvasNode, type CanvasNodeKind } from "@/lib/canvasActions"
@@ -37,6 +42,9 @@ interface NodeItem {
 interface Category {
   id: string
   label: string
+  icon: React.ComponentType<{ className?: string }>
+  iconColor: string
+  hoverBgColor: string
   nodes: NodeItem[]
 }
 
@@ -44,6 +52,9 @@ const categories: Category[] = [
   {
     id: "files",
     label: "File",
+    icon: Folder,
+    iconColor: "text-blue-600",
+    hoverBgColor: "#82a6f4", // blue-600 darker
     nodes: [
       { id: "file-upload", label: "Upload File", icon: Upload },
       { id: "file-create", label: "Create New File", icon: FilePlus2 },
@@ -53,6 +64,9 @@ const categories: Category[] = [
   {
     id: "agents",
     label: "Agents",
+    icon: Bot,
+    iconColor: "text-purple-600",
+    hoverBgColor: "#e782f4", // purple-600 darker
     nodes: [
       { id: "summarize", label: "Summarize", icon: Sparkles },
       { id: "outline-extractor", label: "Outline Extractor", icon: List },
@@ -71,6 +85,9 @@ const categories: Category[] = [
   {
     id: "utility",
     label: "Utility",
+    icon: Settings,
+    iconColor: "text-orange-600",
+    hoverBgColor: "#ebad25", // orange-600 darker
     nodes: [{ id: "prompt-template", label: "Prompt Template", icon: Code2 }],
   },
 ]
@@ -84,20 +101,110 @@ function onQuickAdd(nodeType: CanvasNodeKind) {
   requestCanvasNode(nodeType)
 }
 
+interface NodeButtonProps {
+  node: NodeItem
+  hoverBgColor: string
+  isCollapsed: boolean
+}
+
+function NodeButton({ node, hoverBgColor, isCollapsed }: NodeButtonProps) {
+  const [isHovered, setIsHovered] = useState(false)
+  const Icon = node.icon
+
+  if (isCollapsed) {
+    return (
+      <button
+        className="w-full flex items-center justify-center px-2 py-1.5 rounded-md cursor-move transition-colors"
+        style={{
+          backgroundColor: isHovered ? hoverBgColor : "transparent",
+        }}
+        draggable
+        onDragStart={(e) => onDragStart(e, node.id)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        title={node.label}
+      >
+        <span 
+          style={{ 
+            color: isHovered ? "white" : "#4b5563",
+            transform: isHovered ? "scale(1.3)" : "scale(1)",
+            transition: "all 0.2s ease-in-out"
+          }}
+        >
+          <Icon className="h-3.5 w-3.5 transition-colors" />
+        </span>
+      </button>
+    )
+  }
+
+  return (
+    <button
+      className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md cursor-move text-left transition-colors"
+      style={{
+        backgroundColor: isHovered ? hoverBgColor : "transparent",
+      }}
+      draggable
+      onDragStart={(e) => onDragStart(e, node.id)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <span 
+        style={{ 
+          color: isHovered ? "white" : "#4b5563",
+          transform: isHovered ? "scale(1.3)" : "scale(1)",
+          transition: "all 0.2s ease-in-out"
+        }}
+      >
+        <Icon className="h-3.5 w-3.5 flex-shrink-0 transition-colors" />
+      </span>
+      <span className="text-xs transition-colors" style={{ color: isHovered ? "white" : "#374151" }}>
+        {node.label}
+      </span>
+    </button>
+  )
+}
+
 interface CollapsibleCategoryProps {
   category: Category
   isOpen: boolean
   onToggle: () => void
+  isCollapsed: boolean
 }
 
-function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategoryProps) {
+function CollapsibleCategory({ category, isOpen, onToggle, isCollapsed }: CollapsibleCategoryProps) {
+  const CategoryIcon = category.icon
+
+  if (isCollapsed) {
+    return (
+      <div className="space-y-1.5 border border-gray-200 rounded-lg">
+        <button
+          onClick={onToggle}
+          className="w-full flex items-center justify-center px-1.5 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
+          title={category.label}
+        >
+          <CategoryIcon className={`h-4 w-4 ${category.iconColor}`} />
+        </button>
+        {isOpen && (
+          <div className="space-y-0.5">
+            {category.nodes.map((node) => (
+              <NodeButton key={node.id} node={node} hoverBgColor={category.hoverBgColor} isCollapsed={true} />
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-1.5">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-gray-600 hover:text-gray-900 px-1.5 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wider px-1.5 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
       >
-        <span>{category.label}</span>
+        <div className="flex items-center gap-1.5">
+          <CategoryIcon className={`h-3.5 w-3.5 ${category.iconColor}`} />
+          <span className={category.iconColor}>{category.label}</span>
+        </div>
         {isOpen ? (
           <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
         ) : (
@@ -106,29 +213,19 @@ function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategory
       </button>
       {isOpen && (
         <div className="space-y-0.5 pl-1">
-          {category.nodes.map((node) => {
-            const Icon = node.icon
-            return (
-              <div key={node.id} className="flex items-center gap-1 group">
-                <button
-                  className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white cursor-move text-left transition-colors"
-                  draggable
-                  onDragStart={(e) => onDragStart(e, node.id)}
-                >
-                  <Icon className="h-3.5 w-3.5 flex-shrink-0 text-gray-600" />
-                  <span className="text-xs text-gray-700">{node.label}</span>
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Add ${node.label} node`}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-gray-200 text-gray-600 transition-opacity"
-                  onClick={() => onQuickAdd(node.id)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )
-          })}
+          {category.nodes.map((node) => (
+            <div key={node.id} className="flex items-center gap-1 group">
+              <NodeButton node={node} hoverBgColor={category.hoverBgColor} isCollapsed={false} />
+              <button
+                type="button"
+                aria-label={`Add ${node.label} node`}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-gray-200 text-gray-600 transition-opacity"
+                onClick={() => onQuickAdd(node.id)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -137,6 +234,7 @@ function CollapsibleCategory({ category, isOpen, onToggle }: CollapsibleCategory
 
 export function LeafletSidebar() {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const toggleCategory = (categoryId: string) => {
     setOpenCategories((prev) => {
@@ -151,14 +249,30 @@ export function LeafletSidebar() {
   }
 
   return (
-    <div className="w-48 border-r border-gray-200 bg-white flex flex-col h-full">
+    <div className={`${isCollapsed ? "w-12" : "w-48"} border-r border-gray-200 bg-white flex flex-col h-full transition-all duration-200`}>
       <div className="p-2 border-b border-gray-200 bg-white">
-        <div className="relative">
-          <input
-            placeholder="Search"
-            className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs focus:outline-none placeholder:text-gray-400 bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-300 focus:ring-1 focus:ring-gray-200 transition-colors"
-          />
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+        <div className="flex items-center gap-1.5">
+          {!isCollapsed && (
+            <div className="relative flex-1">
+              <input
+                placeholder="Search"
+                className="w-full pl-7 pr-2 py-1.5 rounded-lg text-xs focus:outline-none placeholder:text-gray-400 bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-300 focus:ring-1 focus:ring-gray-200 transition-colors"
+              />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            </div>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={`${isCollapsed ? "w-full justify-center" : ""} flex items-center justify-center p-1.5 rounded-md hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors`}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronsRight className="h-4 w-4" />
+            ) : (
+              <ChevronsLeft className="h-4 w-4" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -169,6 +283,7 @@ export function LeafletSidebar() {
             category={category}
             isOpen={openCategories.has(category.id)}
             onToggle={() => toggleCategory(category.id)}
+            isCollapsed={isCollapsed}
           />
         ))}
       </div>

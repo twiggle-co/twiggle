@@ -20,6 +20,19 @@
 
 ## Step 2: Environment Variables
 
+### If Using Docker
+
+Add to `.env.development`:
+
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key-here
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+### If Not Using Docker
+
 Add to `.env.local`:
 
 ```env

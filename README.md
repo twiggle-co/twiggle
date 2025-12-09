@@ -6,8 +6,14 @@ Main site code for the Twiggle application.
 
 ### Prerequisites
 
-- Node.js 18+ 
+**Option 1: Docker (Recommended for teams)**
+- Docker Desktop installed and running
+- See [Docker Setup Guide](./docs/guides/docker-setup.md)
+
+**Option 2: Local Development**
+- Node.js 24+ (required for Prisma 7)
 - npm, yarn, pnpm, or bun
+- PostgreSQL database (or use Docker)
 
 ### Installation
 
@@ -50,11 +56,13 @@ npm start
 
 Detailed setup guides are available in the [`/docs`](./docs) directory:
 
-- [Quick Setup Guide](./docs/guides/setup-quickstart.md) - **Start here** - 5-minute setup
+- [Docker Setup](./docs/guides/docker-setup.md) - **Recommended for teams** - Docker setup for local development
 - [Database Setup](./docs/guides/database-setup.md) - Prisma + Vercel Postgres
+- [Database Migrations](./docs/guides/database-migrations.md) - Safely modify database schema
 - [Google Authentication Setup](./docs/guides/google-auth.md) - Google OAuth configuration
 - [Google Cloud Storage Setup](./docs/guides/google-cloud-storage.md) - File storage setup
-- [GitHub Setup](./docs/guides/github.md) - Version control setup
+- [Code Structure Guide](./docs/guides/code-structure.md) - Understanding the `/src` directory
+- [Color Palette](./docs/guides/color-palette.md) - Design system colors
 
 See the [Documentation Index](./docs/README.md) for complete documentation.
 
@@ -74,12 +82,17 @@ See the [Documentation Index](./docs/README.md) for complete documentation.
 twiggle-frontend/
 ├── src/
 │   ├── app/              # Next.js App Router pages and API routes
-│   ├── components/        # React components
-│   └── lib/              # Utility functions
+│   ├── components/       # React components
+│   ├── lib/              # Utility functions and helpers
+│   ├── types/            # TypeScript type definitions
+│   └── middleware.ts     # Next.js middleware
 ├── docs/                 # Documentation
-├── public/              # Static assets
-└── key/                 # Local credentials (gitignored)
+├── prisma/               # Database schema and migrations
+├── public/               # Static assets
+└── key/                  # Local credentials (gitignored)
 ```
+
+See [Code Structure Guide](./docs/guides/code-structure.md) for detailed explanation of the `/src` directory.
 
 ## Environment Variables
 

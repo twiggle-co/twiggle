@@ -1,0 +1,78 @@
+﻿services:
+  # PostgreSQL database for development
+  db:
+    image: postgres:15-alpine
+    container_name: twiggle-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: twiggle_dev
+      # Suppress harmless "invalid length of startup packet" warnings
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    command: >
+      postgres
+      -c log_min_messages=warning
+      -c log_connections=off
+      -c log_disconnections=off
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL database for testing
+  test-db:
+    image: postgres:15-alpine
+    container_name: twiggle-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: twiggle_test
+      # Suppress harmless "invalid length of startup packet" warnings
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    command: >
+      postgres
+      -c log_min_messages=warning
+      -c log_connections=off
+      -c log_disconnections=off
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Next.js web application (development)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: twiggle-web
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.development
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_dev_data:
+  postgres_test_data:

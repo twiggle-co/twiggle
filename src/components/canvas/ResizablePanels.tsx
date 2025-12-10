@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { colors } from "@/lib/colors"
 
 const DIVIDER_WIDTH = "12px"
 
@@ -41,14 +40,19 @@ export function ResizablePanels({
 
   const [leftWidth, setLeftWidth] = useState(() => getTargetWidth(viewMode))
   const [isDragging, setIsDragging] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef(false)
   const startXRef = useRef(0)
   const startLeftWidthRef = useRef(0)
   const rafIdRef = useRef<number | null>(null)
   const currentLeftWidthRef = useRef(leftWidth)
-  const isAnimatingRef = useRef(false)
   const animationRef = useRef<number | null>(null)
+  const isAnimatingRef = useRef(false)
+
+  useEffect(() => {
+    isAnimatingRef.current = isAnimating
+  }, [isAnimating])
 
   useEffect(() => {
     if (isDraggingRef.current || isAnimatingRef.current) return
@@ -57,37 +61,45 @@ export function ResizablePanels({
     const currentWidth = currentLeftWidthRef.current
     if (Math.abs(currentWidth - targetWidth) < 0.1) return
 
-    isAnimatingRef.current = true
-    const startWidth = currentWidth
-    const startTime = Date.now()
+    // Use requestAnimationFrame to defer setState
+    const startAnimation = () => {
+      setIsAnimating(true)
+      isAnimatingRef.current = true
+      const startWidth = currentWidth
+      const startTime = Date.now()
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / animationDuration, 1)
+      const animate = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / animationDuration, 1)
 
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2
+        const eased = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2
 
-      const newWidth = startWidth + (targetWidth - startWidth) * eased
-      setLeftWidth(newWidth)
-      currentLeftWidthRef.current = newWidth
+        const newWidth = startWidth + (targetWidth - startWidth) * eased
+        setLeftWidth(newWidth)
+        currentLeftWidthRef.current = newWidth
 
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate)
-      } else {
-        isAnimatingRef.current = false
-        animationRef.current = null
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate)
+        } else {
+          setIsAnimating(false)
+          isAnimatingRef.current = false
+          animationRef.current = null
+        }
       }
+
+      animationRef.current = requestAnimationFrame(animate)
     }
 
-    animationRef.current = requestAnimationFrame(animate)
+    requestAnimationFrame(startAnimation)
 
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current)
         animationRef.current = null
       }
+      setIsAnimating(false)
       isAnimatingRef.current = false
     }
   }, [viewMode, animationDuration])
@@ -106,7 +118,7 @@ export function ResizablePanels({
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current)
         animationRef.current = null
-        isAnimatingRef.current = false
+        setIsAnimating(false)
       }
 
       isDraggingRef.current = true
@@ -217,7 +229,7 @@ export function ResizablePanels({
         style={{
           width: orientation === "vertical" ? `${leftWidth}%` : "100%",
           height: orientation === "horizontal" ? `${leftWidth}%` : "100%",
-          transition: isDragging || isAnimatingRef.current
+          transition: isDragging || isAnimating
             ? "none"
             : `width ${animationDuration}ms ease-in-out, height ${animationDuration}ms ease-in-out`,
         }}
@@ -277,7 +289,7 @@ export function ResizablePanels({
         style={{
           width: orientation === "vertical" ? `${100 - leftWidth}%` : "100%",
           height: orientation === "horizontal" ? `${100 - leftWidth}%` : "100%",
-          transition: isDragging || isAnimatingRef.current
+          transition: isDragging || isAnimating
             ? "none"
             : `width ${animationDuration}ms ease-in-out, height ${animationDuration}ms ease-in-out`,
         }}

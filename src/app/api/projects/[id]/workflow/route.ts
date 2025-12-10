@@ -33,15 +33,16 @@ export async function GET(
     try {
       const workflowData = await downloadJsonFromGCS(project.workflowDataUrl)
       return NextResponse.json(workflowData)
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       if (
-        error?.message?.includes("File not found") ||
-        error?.message?.includes("does not exist")
+        errorMessage.includes("File not found") ||
+        errorMessage.includes("does not exist")
       ) {
         await prisma.project
           .update({
             where: { id },
-            data: { workflowDataUrl: null } as any,
+            data: { workflowDataUrl: null },
           })
           .catch(() => {})
       }
@@ -96,7 +97,7 @@ export async function POST(
       data: {
         workflowDataUrl: storageUrl,
         updatedAt: new Date(),
-      } as any,
+      },
     })
 
     return NextResponse.json({

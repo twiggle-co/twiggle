@@ -36,10 +36,11 @@ async function getFileUrl(
   try {
     await file.makePublic()
     return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
-  } catch (makePublicError: any) {
+  } catch (makePublicError) {
+    const error = makePublicError as { code?: number; message?: string }
     if (
-      makePublicError?.code === 400 &&
-      makePublicError?.message?.includes("uniform bucket-level access")
+      error?.code === 400 &&
+      error?.message?.includes("uniform bucket-level access")
     ) {
       const [signedUrl] = await file.getSignedUrl({
         version: "v4",

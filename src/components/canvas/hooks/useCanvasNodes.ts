@@ -1,15 +1,17 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useRef, useEffect } from "react"
 import type { XYPosition } from "@xyflow/react"
 import type { DragType } from "../nodeTemplates"
 import { nodeTemplates } from "../nodeTemplates"
 import type { TwiggleNode, UploadedFileMeta } from "../types"
 
+import type { Edge } from "@xyflow/react"
+
 interface UseCanvasNodesProps {
   projectId: string | null
   setNodes: React.Dispatch<React.SetStateAction<TwiggleNode[]>>
-  setEdges: React.Dispatch<React.SetStateAction<any[]>>
+  setEdges: React.Dispatch<React.SetStateAction<Edge[]>>
 }
 
 export function useCanvasNodes({
@@ -36,6 +38,8 @@ export function useCanvasNodes({
     [setNodes, setEdges]
   )
 
+  const handleFileChangeRef = useRef<(nodeId: string, file: UploadedFileMeta | null) => void | undefined>(undefined)
+
   const handleFileChange = useCallback(
     (nodeId: string, file: UploadedFileMeta | null) => {
       setNodes((prev) =>
@@ -47,7 +51,7 @@ export function useCanvasNodes({
                   ...node.data,
                   file,
                   projectId: projectId,
-                  onFileChange: handleFileChange,
+                  onFileChange: handleFileChangeRef.current || (() => {}),
                   onRemove: handleRemoveNode,
                 },
               }
@@ -57,6 +61,10 @@ export function useCanvasNodes({
     },
     [setNodes, projectId, handleRemoveNode]
   )
+
+  useEffect(() => {
+    handleFileChangeRef.current = handleFileChange
+  }, [handleFileChange])
 
   const addTwiggleNode = useCallback(
     (dragType: DragType, position: XYPosition) => {
@@ -71,7 +79,7 @@ export function useCanvasNodes({
           ...template,
           file: null,
           projectId: projectId,
-          onFileChange: handleFileChange,
+          onFileChange: handleFileChangeRef.current || handleFileChange,
           onRemove: handleRemoveNode,
         },
       }
@@ -88,7 +96,7 @@ export function useCanvasNodes({
         data: {
           ...node.data,
           projectId: projectId,
-          onFileChange: handleFileChange,
+          onFileChange: handleFileChangeRef.current || handleFileChange,
           onRemove: handleRemoveNode,
         },
       }))

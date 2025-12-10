@@ -68,26 +68,25 @@ function generateTwiggleGame(): { nodes: Node[]; edges: Edge[] } {
 }
 
 function TwiggleGame() {
-  const [nodes, setNodes] = useState<Node[]>([])
-  const [edges, setEdges] = useState<Edge[]>([])
+  const [nodes, setNodes] = useState<Node[]>(() => generateTwiggleGame().nodes)
+  const [edges, setEdges] = useState<Edge[]>(() => generateTwiggleGame().edges)
   const { fitView } = useReactFlow()
 
   useEffect(() => {
-    const game = generateTwiggleGame()
-    setNodes(game.nodes)
-    setEdges(game.edges)
-    setTimeout(() => fitView({ padding: 0.2 }), 100)
+    // Fit view after initial render
+    const timer = setTimeout(() => fitView({ padding: 0.2 }), 100)
+    return () => clearTimeout(timer)
   }, [fitView])
 
   const onNodesChange = useCallback(
-    (changes: any) => {
+    (changes: Parameters<typeof applyNodeChanges>[0]) => {
       setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot))
     },
     []
   )
 
   const onEdgesChange = useCallback(
-    (changes: any) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+    (changes: Parameters<typeof applyEdgeChanges>[0]) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
     []
   )
 

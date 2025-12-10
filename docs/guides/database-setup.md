@@ -1,43 +1,72 @@
-# Database Setup
+# Database Setup Guide
 
-This guide covers setting up a PostgreSQL database for Twiggle. You can use either:
+This guide explains how to set up a PostgreSQL database for Twiggle. You can use either a local PostgreSQL installation or a hosted service.
 
-- **Docker** (recommended for local development) - See [Docker Setup Guide](./docker-setup.md) for complete Docker setup
-- **Vercel Postgres** (for production or cloud-hosted development) - This guide focuses on Vercel Postgres setup
+## Quick Overview
 
-> **💡 Tip:** If you're setting up for the first time and want the easiest local development experience, start with the [Docker Setup Guide](./docker-setup.md) which includes database setup.
+Twiggle uses:
+- **PostgreSQL** as the database
+- **Prisma ORM** to manage the database schema
+- **Prisma 7** with a special configuration file (`prisma.config.ts`)
 
-## Prerequisites
+## Choose Your Database Option
 
-- Node.js 24+ (required for Prisma 7)
-- npm or compatible package manager
-- **OR** Docker Desktop (if using Docker - see [Docker Setup Guide](./docker-setup.md))
+### Option 1: Local PostgreSQL (Good for solo development)
 
-## Step 1: Create Database
+**Pros:** Full control, no internet required, free  
+**Cons:** Requires installation, manual setup
 
-1. Go to [vercel.com/dashboard](https://vercel.com/dashboard) → Your Project
-2. Click **Storage** tab → **Create Database** → **Postgres**
-3. Name it and select region
-4. Copy the connection string
+**Steps:**
+1. [Download PostgreSQL](https://www.postgresql.org/download/)
+2. Install and start the service
+3. Create a database:
+   ```bash
+   createdb twiggle_dev
+   ```
+4. Use connection string: `postgresql://postgres:password@localhost:5432/twiggle_dev?sslmode=disable`
 
-## Step 2: Environment Variables
+### Option 2: Hosted PostgreSQL (Recommended for teams)
 
-### Option A: Using Docker (Recommended for Local Development)
+**Pros:** Easy setup, automatic backups, team-friendly  
+**Cons:** Requires internet, may have costs
 
-If you're using Docker, create `.env.development` (see [Docker Setup Guide](./docker-setup.md) for details):
+**Popular Providers:**
+- **[Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)** - Best for Vercel deployments
+- **[Neon](https://neon.tech)** - Serverless PostgreSQL
+- **[Supabase](https://supabase.com)** - Open source Firebase alternative
 
+**Steps:**
+1. Create an account with your chosen provider
+2. Create a new PostgreSQL database
+3. Copy the connection string they provide
+4. Use that connection string in your `.env.local`
+
+## Step-by-Step Setup
+
+### Step 1: Get Your Database Connection String
+
+**For Local PostgreSQL:**
 ```env
-DATABASE_URL="postgresql://postgres:password@db:5432/twiggle_dev?sslmode=disable"
+DATABASE_URL="postgresql://postgres:your-password@localhost:5432/twiggle_dev?sslmode=disable"
 ```
 
-### Option B: Using Vercel Postgres or Other Hosted Provider
+**For Hosted PostgreSQL:**
+Your provider will give you a connection string that looks like:
+```env
+DATABASE_URL="postgresql://user:password@host.region.provider.com:5432/database?sslmode=require"
+```
 
-Create `.env.local` in project root:
+### Step 2: Add to Environment Variables
+
+Add the connection string to your `.env.local` file:
 
 ```env
-DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key-here
+# Database Connection
+DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
+
+# NextAuth Configuration
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
 ```
 
 **Generate NEXTAUTH_SECRET:**
@@ -45,96 +74,142 @@ NEXTAUTH_SECRET=your-secret-key-here
 openssl rand -base64 32
 ```
 
-## Step 3: Install Dependencies
+### Step 3: Install Dependencies
 
 ```bash
 npm install
 ```
 
-This will automatically run `prisma generate` after installation (via postinstall script).
+This automatically generates Prisma Client (via postinstall script).
 
-## Step 4: Initialize Database
+### Step 4: Initialize Database Schema
 
-### If Using Docker
+Run the migration to create all database tables:
 
 ```bash
-# Start Docker database
-docker compose up db -d
-
-# Initialize database schema
-# Option A: Using npm script (recommended)
-npm run db:migrate:dev
-# OR for quick development (no migration files):
-npm run db:push:dev
-
-# Option B: Using npx directly
-npx dotenv-cli -e .env.development -- prisma migrate dev
-# OR for quick development:
-npx dotenv-cli -e .env.development -- prisma db push
+npm run db:migrate
 ```
 
-### If Using Vercel Postgres
+When prompted, name your migration (e.g., `init`).
 
-For initial setup (development), use `db:push`:
+**What this does:**
+- Creates a migration file in `prisma/migrations/`
+- Applies the migration to your database
+- Creates all tables defined in `prisma/schema.prisma`
+- Regenerates Prisma Client
 
+**Quick alternative (development only):**
 ```bash
 npm run db:push
 ```
+⚠️ **Warning:** This doesn't create migration files. Only use for quick prototyping in development!
 
-This syncs your schema to the database without creating migration files.
-
-**Note:** For production or when you need versioned migrations, use `npm run db:migrate` instead (see [Database Migrations Guide](./database-migrations.md)).
-
-## Step 5: Verify
+### Step 5: Verify It Works
 
 ```bash
 npm run dev
 ```
 
-Visit `http://localhost:3000` and test sign-in.
+Visit `http://localhost:3000` and try signing in. If there are no database errors in the console, you're good to go!
 
-## Prisma 7 Configuration
+## Viewing Your Database
 
-This project uses Prisma 7, which requires:
-
-- **`prisma.config.ts`**: Configuration file for datasource URL and migration settings
-- **Adapter Pattern**: PrismaClient uses `@prisma/adapter-pg` for PostgreSQL connections
-- **No URL in Schema**: The `url` property is no longer in `schema.prisma` (moved to `prisma.config.ts`)
-
-See `prisma.config.ts` and `src/lib/prisma.ts` for implementation details.
-
-## Production
-
-1. Add `DATABASE_URL` to Vercel environment variables
-2. Run migrations: `npx prisma migrate deploy`
-
-## View Database
+### Prisma Studio (Visual Database Browser)
 
 ```bash
 npm run db:studio
 ```
 
-Opens at `http://localhost:5555`
+This opens a web interface at `http://localhost:5555` where you can:
+- View all tables and data
+- Edit records
+- See relationships between tables
 
-**Note:** 
-- If using Docker: Prisma Studio reads `DATABASE_URL` from your `.env.development` file
-- If using Vercel Postgres: Prisma Studio reads `DATABASE_URL` from your `.env.local` file (loaded via `dotenv-cli`)
-- The URL is not in `schema.prisma` for Prisma 7 compatibility
+### Command Line
+
+```bash
+# Connect to database
+psql $DATABASE_URL
+
+# Or if using local PostgreSQL
+psql -U postgres -d twiggle_dev
+```
+
+## Understanding Prisma 7
+
+This project uses Prisma 7, which has some differences from earlier versions:
+
+### Key Differences
+
+1. **Configuration File:** Database URL is in `prisma.config.ts` (not `schema.prisma`)
+2. **Adapter Pattern:** Uses `@prisma/adapter-pg` for PostgreSQL connections
+3. **Migration System:** Same migration workflow, but configuration is separate
+
+### Important Files
+
+- `prisma/schema.prisma` - Your database schema (models, fields, relationships)
+- `prisma.config.ts` - Database connection configuration
+- `src/lib/prisma.ts` - Prisma Client instance used throughout the app
 
 ## Available Commands
 
-### If Using Docker
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `npm run db:migrate` | Create and apply migration | **Recommended** - Use for all schema changes |
+| `npm run db:push` | Sync schema without migrations | Development only - Quick prototyping |
+| `npm run db:studio` | Open visual database browser | Anytime - View/edit data |
+| `npm run db:query` | Run custom database queries | Debugging - Custom queries |
 
-- `docker compose up db -d` - Start Docker database
-- `npm run db:migrate:dev` - Create and apply migration (recommended)
-- `npm run db:push:dev` - Quick push (development, no migration files)
-- `npm run db:studio:dev` - Open Prisma Studio (database GUI)
-- `npm run db:dev:reset` - Reset development database (Docker only)
-- `npx dotenv-cli -e .env.development -- prisma [command]` - Alternative direct command
+## Production Setup
 
-### If Using Vercel Postgres
+For production deployments (e.g., Vercel):
 
-- `npm run db:push` - Sync schema to database (development)
-- `npm run db:migrate` - Create and apply migration (recommended for production)
-- `npm run db:studio` - Open Prisma Studio (database GUI)
-- `npm run db:query` - Run custom database queries
+1. **Add environment variable** in your hosting platform:
+   - `DATABASE_URL` = Your production database connection string
+
+2. **Run migrations** (usually automatic, but can be manual):
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+3. **Verify** the database connection works in production
+
+## Troubleshooting
+
+### "Can't connect to database"
+
+**Check:**
+- Is PostgreSQL running? (for local)
+- Is the connection string correct?
+- Are credentials correct?
+- Is the database created?
+
+**Test connection:**
+```bash
+psql $DATABASE_URL
+```
+
+### "Prisma Client not generated"
+
+```bash
+npx prisma generate
+```
+
+### "Migration failed"
+
+1. Check the error message
+2. Verify your schema is valid: `npx prisma validate`
+3. Check database permissions
+4. For production, review migration files before applying
+
+### "Port 5432 already in use"
+
+- Stop other PostgreSQL instances
+- Or change the port in your connection string
+
+## Next Steps
+
+- ✅ Database is set up and working
+- 📖 Read [Database Migrations Guide](./database-migrations.md) to learn how to modify the schema
+- 🔐 Set up [Google Authentication](./google-auth.md)
+- 📦 Set up [Google Cloud Storage](./google-cloud-storage.md)

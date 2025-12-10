@@ -8,7 +8,13 @@ export const BUCKET_NAME = stripQuotes(process.env.GCS_BUCKET_NAME) || "twiggle-
 const SIGNED_URL_EXPIRY_DAYS = 7
 const SIGNED_URL_EXPIRY_MS = SIGNED_URL_EXPIRY_DAYS * 24 * 60 * 60 * 1000
 
-function normalizePrivateKey(credentials: any): any {
+interface GCSCredentials {
+  private_key?: string
+  project_id?: string
+  [key: string]: unknown
+}
+
+function normalizePrivateKey(credentials: GCSCredentials): GCSCredentials {
   if (credentials && typeof credentials === "object" && credentials.private_key) {
     let privateKey = credentials.private_key
 
@@ -105,8 +111,8 @@ export function getStorageInstance(): Storage {
       config.keyFilename = credentials
     } else {
       config.credentials = credentials
-      if (!config.projectId && "project_id" in credentials) {
-        config.projectId = (credentials as any).project_id
+      if (!config.projectId && "project_id" in credentials && typeof credentials.project_id === "string") {
+        config.projectId = credentials.project_id
       }
     }
 
@@ -124,10 +130,11 @@ async function getFileUrl(fileName: string, file: File): Promise<string> {
   try {
     await file.makePublic()
     return `https://storage.googleapis.com/${BUCKET_NAME}/${fileName}`
-  } catch (makePublicError: any) {
+  } catch (makePublicError) {
+    const error = makePublicError as { code?: number; message?: string }
     if (
-      makePublicError?.code === 400 &&
-      makePublicError?.message?.includes("uniform bucket-level access")
+      error?.code === 400 &&
+      error?.message?.includes("uniform bucket-level access")
     ) {
       const [signedUrl] = await file.getSignedUrl({
         version: "v4",
@@ -212,7 +219,7 @@ export async function downloadJsonFromGCS(storageUrl: string): Promise<unknown> 
     const jsonString = buffer.toString("utf8")
     return JSON.parse(jsonString)
   } catch (error) {
-    const err = error as any
+    const err = error as { code?: number; message?: string }
     if (err?.code === 404 || err?.message?.includes("does not exist")) {
       throw new Error(`File not found: ${storageUrl}`)
     }

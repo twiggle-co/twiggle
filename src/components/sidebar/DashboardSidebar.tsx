@@ -138,7 +138,7 @@ export function DashboardSidebar() {
         <div className="px-3 py-1 mt-1">
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-white/80 flex-shrink-0" />
-            <span className="text-xs font-medium text-white/80 truncate min-w-0">{userName}'s team</span>
+            <span className="text-xs font-medium text-white/80 truncate min-w-0">{userName}&apos;s team</span>
             <span className="ml-auto text-[11px] px-1.5 py-0.5 bg-white/30 text-white rounded flex-shrink-0">Free</span>
           </div>
         </div>

@@ -1,120 +1,117 @@
-# Twiggle Frontend
+# Twiggle
 
-Main site code for the Twiggle application.
+A Next.js application for creating and managing node-based workflows with file storage and Google authentication.
 
-## Getting Started
-
-### Prerequisites
-
-**Option 1: Docker (Recommended for teams)**
-- Docker Desktop installed and running
-- See [Docker Setup Guide](./docs/guides/docker-setup.md)
-
-**Option 2: Local Development**
-- Node.js 24+ (required for Prisma 7)
-- npm, yarn, pnpm, or bun
-- PostgreSQL database (or use Docker)
-
-### Installation
+## 🚀 Quick Start
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd twiggle
+
+# Install dependencies
 npm install
-```
 
-### Development
+# Set up environment variables (see docs)
+cp .env.example .env.local  # Edit with your credentials
 
-Run the development server:
+# Initialize database
+npm run db:migrate
 
-```bash
+# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Visit [http://localhost:3000](http://localhost:3000) to view the application.
 
-### Build
+## 📚 Documentation
 
-Create a production build:
+**👉 [Complete Documentation & Setup Guide](./docs/README.md)** - Start here for detailed setup instructions!
 
-```bash
-npm run build
-```
+### Quick Links
 
-Start the production server:
-
-```bash
-npm start
-```
+- **[Getting Started](./docs/README.md#complete-setup-guide)** - Complete setup walkthrough
+- **[Database Setup](./docs/guides/database-setup.md)** - PostgreSQL configuration
+- **[Google Authentication](./docs/guides/google-auth.md)** - OAuth setup
+- **[Google Cloud Storage](./docs/guides/google-cloud-storage.md)** - File storage setup
+- **[Code Structure](./docs/guides/code-structure.md)** - Understanding the codebase
+- **[Database Migrations](./docs/guides/database-migrations.md)** - Modifying database schema
 
 ## Features
 
-- **File Upload & Storage**: Upload files to Google Cloud Storage
-- **User Authentication**: Google OAuth login via NextAuth.js
-- **Canvas Interface**: Interactive node-based canvas for workflow management
-- **File Preview**: Preview uploaded files in popout windows
-
-## Documentation
-
-Detailed setup guides are available in the [`/docs`](./docs) directory:
-
-- **[Onboarding Guide](./docs/guides/onboarding.md)** - **NEW DEVELOPERS START HERE** - Complete setup process
-- [Docker Setup](./docs/guides/docker-setup.md) - Docker setup for local development (recommended for teams)
-- [Database Setup](./docs/guides/database-setup.md) - Prisma + Vercel Postgres
-- [Database Migrations](./docs/guides/database-migrations.md) - Safely modify database schema
-- [Google Authentication Setup](./docs/guides/google-auth.md) - Google OAuth configuration
-- [Google Cloud Storage Setup](./docs/guides/google-cloud-storage.md) - File storage setup
-- [Code Structure Guide](./docs/guides/code-structure.md) - Understanding the `/src` directory
-- [Color Palette](./docs/guides/color-palette.md) - Design system colors
-
-See the [Documentation Index](./docs/README.md) for complete documentation.
+- **Node-based Workflow Editor** - Interactive canvas using React Flow
+- **File Upload & Storage** - Upload and manage files via Google Cloud Storage
+- **User Authentication** - Google OAuth login via NextAuth.js
+- **Project Management** - Organize workflows into projects
+- **Real-time Updates** - Auto-save and workflow persistence
 
 ## Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org/) with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Canvas**: [React Flow](https://xyflow.com/)
-- **Authentication**: [NextAuth.js](https://next-auth.js.org/)
-- **Storage**: Google Cloud Storage
-- **Deployment**: Vercel
+- **Framework:** [Next.js 16](https://nextjs.org/) with App Router
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Canvas:** [React Flow](https://xyflow.com/)
+- **Authentication:** [NextAuth.js](https://next-auth.js.org/)
+- **Database:** PostgreSQL with [Prisma](https://www.prisma.io/)
+- **Storage:** Google Cloud Storage
+- **Deployment:** Vercel
 
 ## Project Structure
 
 ```
-twiggle-frontend/
+twiggle/
 ├── src/
-│   ├── app/              # Next.js App Router pages and API routes
+│   ├── app/              # Next.js App Router (pages & API routes)
 │   ├── components/       # React components
 │   ├── lib/              # Utility functions and helpers
-│   ├── types/            # TypeScript type definitions
-│   └── middleware.ts     # Next.js middleware
+│   └── types/            # TypeScript type definitions
 ├── docs/                 # Documentation
 ├── prisma/               # Database schema and migrations
-├── public/               # Static assets
-└── key/                  # Local credentials (gitignored)
+└── public/               # Static assets
 ```
 
-See [Code Structure Guide](./docs/guides/code-structure.md) for detailed explanation of the `/src` directory.
+See [Code Structure Guide](./docs/guides/code-structure.md) for detailed explanation.
 
 ## Environment Variables
 
 Required environment variables (see [setup guides](./docs) for details):
 
-- `DATABASE_URL` - PostgreSQL connection string (Vercel Postgres)
-- `NEXTAUTH_URL` - NextAuth.js base URL
-- `NEXTAUTH_SECRET` - NextAuth.js secret key
-- `GOOGLE_CLIENT_ID` - Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
-- `GCS_PROJECT_ID` - Google Cloud project ID (for file storage)
-- `GCS_CREDENTIALS` or `GCS_KEY_FILENAME` - Google Cloud Storage credentials (for file storage)
-- `GCS_BUCKET_NAME` - Google Cloud Storage bucket name (for file storage)
+```env
+# Database
+DATABASE_URL="postgresql://..."
 
-Create a `.env.local` file for local development.
+# Authentication
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key"
+GOOGLE_CLIENT_ID="your-client-id"
+GOOGLE_CLIENT_SECRET="your-client-secret"
 
-## Learn More
+# Storage
+GCS_PROJECT_ID="your-project-id"
+GCS_BUCKET_NAME="your-bucket-name"
+GCS_KEY_FILENAME="key/your-key.json"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Flow Documentation](https://xyflow.com/docs)
-- [NextAuth.js Documentation](https://next-auth.js.org/)
+Create a `.env.local` file for local development. See [Database Setup](./docs/guides/database-setup.md) for details.
+
+## Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+
+npm run db:migrate   # Create and apply database migration
+npm run db:push      # Sync schema (development only)
+npm run db:studio    # Open Prisma Studio (database GUI)
+```
+
+## Getting Help
+
+- 📖 Read the [Complete Documentation](./docs/README.md)
+- 🐛 Check [Troubleshooting](./docs/README.md#troubleshooting) section
+- 💬 Ask questions in your team's communication channel
 
 ## License
 

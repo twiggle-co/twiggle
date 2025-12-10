@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
+import type { Session, User } from "next-auth"
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -15,15 +16,15 @@ export const authOptions = {
     signIn: "/api/auth/signin",
   },
   callbacks: {
-    async session({ session, user }: { session: any; user: any }) {
-      if (session.user && user) {
+    async session({ session, user }: { session: Session; user: User }) {
+      if (session.user && user && typeof user.id === 'string') {
         session.user.id = user.id
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { profilePictureUrl: true },
         })
         if (dbUser?.profilePictureUrl) {
-          session.user.profilePictureUrl = dbUser.profilePictureUrl
+          (session.user as { id?: string; profilePictureUrl?: string }).profilePictureUrl = dbUser.profilePictureUrl
         }
       }
       return session

@@ -10,29 +10,6 @@ Prisma migrations allow you to version-control your database schema changes. Alw
 
 ### 1. Development Workflow (Recommended)
 
-#### If Using Docker
-
-```bash
-# 1. Make sure Docker database is running
-docker compose up db -d
-
-# 2. Make changes to prisma/schema.prisma
-# 3. Create and apply migration
-# Option A: Using npm script (recommended)
-npm run db:migrate:dev
-
-# Option B: Using npx directly
-npx dotenv-cli -e .env.development -- prisma migrate dev
-
-# This will:
-# - Prompt you to name the migration
-# - Create a migration file in prisma/migrations/
-# - Apply the migration to your database
-# - Regenerate Prisma Client
-```
-
-#### If Using Vercel Postgres or Other Hosted Provider
-
 ```bash
 # 1. Make changes to prisma/schema.prisma
 # 2. Create and apply migration
@@ -49,16 +26,6 @@ npm run db:migrate
 
 For rapid prototyping, you can use `db:push` (doesn't create migration files):
 
-**If Using Docker:**
-```bash
-# Option A: Using npm script (recommended)
-npm run db:push:dev
-
-# Option B: Using npx directly
-npx dotenv-cli -e .env.development -- prisma db push
-```
-
-**If Using Vercel Postgres:**
 ```bash
 npm run db:push
 ```

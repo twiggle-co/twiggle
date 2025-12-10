@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
       const updatedProject = await prisma.project.update({
         where: { id: project.id },
-        data: { workflowDataUrl: storageUrl } as any,
+        data: { workflowDataUrl: storageUrl },
       })
 
       return NextResponse.json(updatedProject, { status: 201 })

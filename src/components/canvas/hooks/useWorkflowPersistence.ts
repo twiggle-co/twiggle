@@ -97,7 +97,7 @@ export function useWorkflowPersistence({
       if (workflowData.nodes && workflowData.edges) {
         // Restore nodes with proper callbacks
         const restoredNodes = restoreNodeCallbacks(
-          workflowData.nodes.map((node: any) => ({
+          (workflowData.nodes as TwiggleNode[]).map((node) => ({
             ...node,
             data: {
               ...node.data,
@@ -120,7 +120,8 @@ export function useWorkflowPersistence({
         setLastSavedHash(hash)
         setHasUnsavedChanges(false)
       }
-    } catch (error) {
+    } catch {
+      // Ignore errors during load
     } finally {
       setIsLoading(false)
       isInitialLoadRef.current = false
@@ -250,11 +251,19 @@ export function useWorkflowPersistence({
   // Expose save function globally for manual save
   useEffect(() => {
     if (typeof window !== "undefined") {
-      ;(window as any).saveWorkflow = () => saveWorkflow(false)
+      interface WindowWithSaveWorkflow extends Window {
+        saveWorkflow?: () => void
+      }
+      const win = window as WindowWithSaveWorkflow
+      win.saveWorkflow = () => saveWorkflow(false)
     }
     return () => {
       if (typeof window !== "undefined") {
-        delete (window as any).saveWorkflow
+        interface WindowWithSaveWorkflow extends Window {
+          saveWorkflow?: () => void
+        }
+        const win = window as WindowWithSaveWorkflow
+        delete win.saveWorkflow
       }
     }
   }, [saveWorkflow])

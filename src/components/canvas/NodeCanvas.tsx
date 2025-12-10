@@ -20,6 +20,7 @@ import {
   CANVAS_FILE_WARNING_EVENT,
   type CanvasAddNodeDetail,
 } from "@/lib/canvasActions"
+import { nodeTemplates, type DragType } from "./nodeTemplates"
 import { TwiggleNodeCard } from "./nodes/TwiggleNodeCard"
 import type { TwiggleNode } from "./types"
 import { colors, colorUtils } from "@/lib/colors"
@@ -82,7 +83,9 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange, onNod
       x: event.clientX,
       y: event.clientY,
     })
-    addTwiggleNode(dragType as any, position)
+    if (dragType && typeof dragType === 'string' && dragType in nodeTemplates) {
+      addTwiggleNode(dragType as DragType, position)
+    }
   }
 
   useEffect(() => {

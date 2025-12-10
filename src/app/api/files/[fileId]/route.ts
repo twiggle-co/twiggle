@@ -81,7 +81,8 @@ export async function DELETE(
         if (files.length > 0) {
           await Promise.all(files.map((file) => file.delete()))
         }
-      } catch (gcsError) {
+      } catch {
+        // Ignore GCS errors during cleanup
       }
       
       return NextResponse.json({ 
@@ -118,13 +119,15 @@ export async function DELETE(
           await Promise.all(files.map((file) => file.delete()))
         }
       }
-    } catch (gcsError: any) {
-      if (gcsError?.code === 404) {
-      } else {
+    } catch (gcsError: unknown) {
+      // Ignore GCS errors - file may not exist
+      const error = gcsError as { code?: number }
+      if (error?.code !== 404) {
+        // Log non-404 errors if needed
       }
     }
 
-    const deleteResult = await prisma.file.deleteMany({
+    await prisma.file.deleteMany({
       where: { fileId },
     })
 

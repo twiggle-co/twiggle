@@ -31,10 +31,12 @@ export function LeafletTopNav({
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      if (typeof window !== "undefined" && (window as any).saveWorkflow) {
-        await (window as any).saveWorkflow()
+      const windowWithSave = window as typeof window & { saveWorkflow?: () => Promise<void> }
+      if (typeof window !== "undefined" && windowWithSave.saveWorkflow) {
+        await windowWithSave.saveWorkflow()
       }
-    } catch (error) {
+    } catch {
+      // Ignore save errors
     } finally {
       setIsSaving(false)
     }

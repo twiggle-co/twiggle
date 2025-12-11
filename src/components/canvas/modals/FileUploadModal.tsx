@@ -221,15 +221,12 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
           {uploadMethod === "file" ? (
             <>
               {/* File Icons Illustration */}
-              <div className="mb-6 flex items-center justify-center">
+              {/* <div className="mb-6 flex items-center justify-center">
                 <div className="relative">
-                  {/* Document stack illustration */}
                   <div className="relative w-32 h-32">
-                    {/* Background documents */}
                     <div className="absolute top-2 left-2 w-20 h-24 bg-gray-200 rounded-sm transform rotate-[-5deg]"></div>
                     <div className="absolute top-4 left-4 w-20 h-24 bg-gray-300 rounded-sm transform rotate-[3deg]"></div>
                     
-                    {/* Foreground documents with icons */}
                     <div className="absolute top-0 left-0 w-20 h-24 bg-white border-2 border-gray-300 rounded-sm shadow-md flex items-center justify-center">
                       <FileText className="h-8 w-8" style={{ color: colors.red }} />
                     </div>
@@ -241,7 +238,7 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Drag and Drop Area */}
               <div
@@ -283,16 +280,16 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
                       disabled={isUploading}
                       className="inline-flex items-center justify-center px-6 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
-                        backgroundColor: colors.warning,
+                        backgroundColor: colors.blue,
                       }}
                       onMouseEnter={(e) => {
                         if (!isUploading) {
-                          e.currentTarget.style.backgroundColor = colors.yellowDark
+                          e.currentTarget.style.backgroundColor = colors.blueDark
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isUploading) {
-                          e.currentTarget.style.backgroundColor = colors.warning
+                          e.currentTarget.style.backgroundColor = colors.blue
                         }
                       }}
                     >
@@ -304,7 +301,7 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
 
               {/* Tip */}
               <p className="text-sm text-gray-500 text-center">
-                Tip: the easiest way to upload a file is to drag it straight into a board.
+                Pro tip: You can also drag and drop files right onto the canvas!
               </p>
             </>
           ) : (
@@ -312,23 +309,23 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
               {/* URL Upload Form */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {/* <label className="block text-sm font-medium text-gray-700 mb-2">
                     Enter URL (Google Docs, Dropbox, etc.)
-                  </label>
+                  </label> */}
                   <form onSubmit={handleUrlSubmit}>
                     <div className="flex gap-2">
                       <input
                         type="url"
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
-                        placeholder="https://docs.google.com/document/d/..."
+                        placeholder="Enter a link URL"
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
                         style={{
                           borderColor: colors.gray + "80",
                         }}
                         onFocus={(e) => {
-                          e.currentTarget.style.borderColor = colors.warning
-                          e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.warning}40`
+                          e.currentTarget.style.borderColor = colors.blue
+                          e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.blue}40`
                         }}
                         onBlur={(e) => {
                           e.currentTarget.style.borderColor = colors.gray + "80"
@@ -339,13 +336,13 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
                         type="submit"
                         className="px-6 py-3 text-white rounded-lg font-medium transition-colors"
                         style={{
-                          backgroundColor: colors.warning,
+                          backgroundColor: colors.blue,
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = colors.yellowDark
+                          e.currentTarget.style.backgroundColor = colors.blueDark
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = colors.warning
+                          e.currentTarget.style.backgroundColor = colors.blue
                         }}
                       >
                         Upload
@@ -353,8 +350,8 @@ export function FileUploadModal({ isOpen, onClose, projectId, onFileUploaded }: 
                     </div>
                   </form>
                 </div>
-                <p className="text-sm text-gray-500">
-                  Paste a link to a file from Google Docs, Dropbox, or other cloud storage services.
+                <p className="text-sm text-gray-500 text-center">
+                  Just paste a link from Google Docs, Dropbox, or any cloud storage - we'll handle the rest!
                 </p>
               </div>
             </>

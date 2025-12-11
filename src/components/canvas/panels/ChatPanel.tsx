@@ -80,7 +80,7 @@ export function ChatPanel() {
                   const container = e.currentTarget.closest("div")
                   if (container) {
                     container.style.borderColor = "transparent"
-                    container.style.boxShadow = `0 0 0 2px ${colors.primary}`
+                    // container.style.boxShadow = `0 0 0 2px ${colors.gray}`
                   }
                 }}
                 onBlur={(e) => {

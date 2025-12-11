@@ -3,8 +3,8 @@
 import { use, useEffect, useState } from "react"
 import { LeafletTopNav, type ViewMode } from "@/components/navigation/LeafletTopNav"
 import { NodeView } from "@/components/canvas/NodeView"
-import { ChatPanel } from "@/components/canvas/ChatPanel"
-import { ResizablePanels } from "@/components/canvas/ResizablePanels"
+import { ChatPanel } from "@/components/canvas/panels/ChatPanel"
+import { ResizablePanels } from "@/components/canvas/panels/ResizablePanels"
 import type { TwiggleNode } from "@/components/canvas/types"
 
 export default function LeafletPage({

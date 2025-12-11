@@ -14,12 +14,10 @@ export type UploadedFileMeta = {
 
 export type TwiggleNodeData = {
   label: string
-  kind: "file" | "agent" | "utility"
+  kind: "file" | "utility"
   nodeType: CanvasNodeKind // Specific node type identifier
   detail: string
   file?: UploadedFileMeta | null
-  fileName?: string // For file-create nodes
-  fileType?: string // For file-create nodes
   projectId?: string | null // Project ID for organizing files in GCS
   onFileChange?: (nodeId: string, file: UploadedFileMeta | null) => void
   onRemove?: (nodeId: string) => void

@@ -43,41 +43,47 @@ export function LeafletTopNav({
   }
 
   return (
-    <div className="h-18 text-white flex items-center justify-between px-6 relative" style={{ backgroundColor: colors.primary }}>
+    <div className="h-15 text-white flex items-center justify-between px-6 relative" style={{ backgroundColor: colors.primary }}>
       <button
         onClick={() => window.location.href = "/"}
         className="flex items-center gap-2 hover:opacity-90 transition-opacity"
       >
-        <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-          <Leaf className="h-5 w-5" color="#118ab2" strokeWidth={2.5} />
+        <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
+          <Leaf className="h-4 w-4" color="#118ab2" strokeWidth={2.5} />
         </div>
-        <span className="font-logo text-3xl hover:underline ml-1">Twiggle</span>
+        <span className="font-logo text-2xl hover:underline ml-1">Twiggle</span>
       </button>
 
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
-        <Link href="/dashboard" className="font-medium text-lg">
-          {projectName ? `My Projects / ${projectName}` : "My Projects"}
+      <div className="absolute left-[calc(50%)] -translate-x-1/2 flex items-center">
+        <Link href="/dashboard" className="font-medium text-base">
+          Leaflets
         </Link>
-        
+      </div>
+
+      <div className="absolute left-[calc(50%+40px)] flex items-center gap-2">
+        <span className="text-white/80 text-base">/</span>
+        {projectName && (
+          <span className="font-medium text-white/80 text-base">{projectName}</span>
+        )}
         <button
           onClick={handleSave}
           disabled={isSaving || !hasUnsavedChanges}
-          className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="ml-10 flex items-center gap-2 px-2 py-1.5 justify-center bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           style={{ color: colors.primary }}
           title={hasUnsavedChanges ? "Save changes" : "All changes saved"}
         >
-          <Save className="h-4 w-4" />
-          <span className="text-sm font-medium">
+          <Save className="h-3.5 w-3.5" />
+          <span className="text-xs font-medium">
             {isSaving ? "Saving..." : "Save"}
           </span>
         </button>
       </div>
 
       <div className="flex items-center gap-2 z-10">
-        <div className="flex gap-1 bg-white/20 rounded-lg p-1">
+        <div className="flex gap-1 bg-white/20 rounded-lg p-0.5">
           <button
             onClick={() => onViewModeChange?.("node-only")}
-            className={`p-2 rounded-md transition-colors ${
+            className={`p-1.5 rounded-md transition-colors ${
               viewMode === "node-only"
                 ? "bg-white"
                 : "text-white/80 hover:text-white hover:bg-white/10"
@@ -85,11 +91,11 @@ export function LeafletTopNav({
             style={viewMode === "node-only" ? { color: colors.primary } : undefined}
             title="Node only view"
           >
-            <Route className="h-5 w-5" />
+            <Route className="h-4 w-4" />
           </button>
           <button
             onClick={() => onViewModeChange?.("mixed")}
-            className={`p-2 rounded-md transition-colors ${
+            className={`p-1.5 rounded-md transition-colors ${
               viewMode === "mixed"
                 ? "bg-white"
                 : "text-white/80 hover:text-white hover:bg-white/10"
@@ -97,11 +103,11 @@ export function LeafletTopNav({
             style={viewMode === "mixed" ? { color: colors.primary } : undefined}
             title="Mixed view"
           >
-            <Split className="h-5 w-5" />
+            <Split className="h-4 w-4" />
           </button>
           <button
             onClick={() => onViewModeChange?.("chat-only")}
-            className={`p-2 rounded-md transition-colors ${
+            className={`p-1.5 rounded-md transition-colors ${
               viewMode === "chat-only"
                 ? "bg-white"
                 : "text-white/80 hover:text-white hover:bg-white/10"
@@ -109,13 +115,13 @@ export function LeafletTopNav({
             style={viewMode === "chat-only" ? { color: colors.primary } : undefined}
             title="Chat only view"
           >
-            <MessageCircle className="h-5 w-5" />
+            <MessageCircle className="h-4 w-4" />
           </button>
         </div>
 
         <button
           onClick={() => setShowUserModal(true)}
-          className="h-10 w-10 ml-4 bg-white rounded-full flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity"
+          className="h-8 w-8 ml-4 bg-white rounded-full flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity"
           title={session?.user?.email || "User"}
         >
           {session?.user?.profilePictureUrl ? (
@@ -125,7 +131,7 @@ export function LeafletTopNav({
               className="h-full w-full object-cover rounded-full border-2 border-white"
             />
           ) : (
-            <span className="text-[#118ab2] font-semibold text-lg">
+            <span className="text-[#118ab2] font-semibold text-sm">
               {session?.user?.name?.charAt(0).toUpperCase() || 
                session?.user?.email?.charAt(0).toUpperCase() || "U"}
             </span>

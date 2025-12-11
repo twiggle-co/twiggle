@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import { Plus, Mic } from "lucide-react"
+import { colors } from "@/lib/colors"
 
 export function ChatPanel() {
   const [message, setMessage] = useState("")
@@ -46,7 +47,12 @@ export function ChatPanel() {
       {/* Input Area */}
       <div className="p-3 mr-3">
         <form onSubmit={handleSubmit} className="justify-center flex">
-          <div className="flex items-center w-full max-w-2xl min-w-60 border border-gray-300 rounded-full bg-white focus-within:ring-2 focus-within:ring-[#118ab2] focus-within:border-transparent transition-all">
+          <div 
+            className="flex items-center w-full max-w-2xl min-w-60 border rounded-full bg-white transition-all"
+            style={{
+              borderColor: colors.gray + "80",
+            }}
+          >
             <button
               type="button"
               className="flex-shrink-0 px-3 text-gray-400 hover:text-gray-600 transition-colors"
@@ -70,11 +76,34 @@ export function ChatPanel() {
                   whiteSpace: "nowrap",
                   overflow: "hidden"
                 }}
+                onFocus={(e) => {
+                  const container = e.currentTarget.closest("div")
+                  if (container) {
+                    container.style.borderColor = "transparent"
+                    container.style.boxShadow = `0 0 0 2px ${colors.primary}`
+                  }
+                }}
+                onBlur={(e) => {
+                  const container = e.currentTarget.closest("div")
+                  if (container) {
+                    container.style.borderColor = colors.gray + "80"
+                    container.style.boxShadow = ""
+                  }
+                }}
               />
             </div>
             <button
               type="button"
-              className="flex-shrink-0 px-5 text-[#118ab2] hover:text-[#0f7a9a] transition-colors"
+              className="flex-shrink-0 px-5 transition-colors"
+              style={{
+                color: colors.primary,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = colors.blueDark
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = colors.primary
+              }}
               title="Voice input"
             >
               <Mic className="h-5 w-5" />

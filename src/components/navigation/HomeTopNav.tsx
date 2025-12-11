@@ -14,32 +14,32 @@ export function HomeTopNav() {
 
   return (
     <>
-      <div className="h-18 bg-[#118ab2] text-white flex items-center justify-between px-6">
+      <div className="h-15 bg-[#118ab2] text-white flex items-center justify-between px-6">
         <button
           onClick={() => window.location.href = "/"}
           className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
         >
-          <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black">
-            <Leaf className="h-5 w-5" color="#118ab2" strokeWidth={2.5} />
+          <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center text-black">
+            <Leaf className="h-4 w-4" color="#118ab2" strokeWidth={2.5} />
           </div>
-          <span className="font-logo text-3xl hover:underline ml-1">Twiggle</span>
+          <span className="font-logo text-2xl hover:underline ml-1">Twiggle</span>
         </button>
 
         <div className="flex items-center gap-4">
           {session ? (
             <button
               onClick={() => setShowUserModal(true)}
-              className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black hover:opacity-90 transition-opacity overflow-hidden"
+              className="h-8 w-8 bg-white rounded-full flex items-center justify-center text-black hover:opacity-90 transition-opacity overflow-hidden"
               title={session?.user?.email || "User"}
             >
               {session.user?.profilePictureUrl ? (
                 <img
                   src={session.user.profilePictureUrl}
                   alt={session.user.name || "User"}
-                  className="h-10 w-10 rounded-full border-2 border-white object-cover"
+                  className="h-8 w-8 rounded-full border-2 border-white object-cover"
                 />
               ) : (
-                <span className="text-[#118ab2] font-semibold">
+                <span className="text-[#118ab2] font-semibold text-sm">
                   {session.user?.name?.charAt(0).toUpperCase() || 
                    session.user?.email?.charAt(0).toUpperCase() || "U"}
                 </span>
@@ -48,7 +48,7 @@ export function HomeTopNav() {
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="hover:underline cursor-pointer text-xl"
+              className="hover:underline cursor-pointer text-lg"
             >
               Login
             </button>

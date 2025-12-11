@@ -23,7 +23,7 @@ export function NodeView({
 }: NodeViewProps) {
   return (
     <div className={`flex flex-1 overflow-hidden ${className || ""}`}>
-      {!isLoadingWorkflow && <LeafletSidebar />}
+      {!isLoadingWorkflow && <LeafletSidebar projectId={projectId} />}
       <NodeCanvas
         projectId={projectId}
         onUnsavedChangesChange={onUnsavedChangesChange}

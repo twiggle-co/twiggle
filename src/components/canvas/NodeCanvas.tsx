@@ -99,7 +99,7 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange, onNod
         y: bounds.top + bounds.height / 2,
       })
 
-      addTwiggleNode(detail.kind, centerPosition)
+      addTwiggleNode(detail.kind as DragType, centerPosition, detail.file)
     }
 
     window.addEventListener(CANVAS_ADD_NODE_EVENT, handler as EventListener)
@@ -194,7 +194,7 @@ function InnerCanvas({ projectId, onUnsavedChangesChange, onLoadingChange, onNod
         fitView
         fitViewOptions={{ padding: 0.2, minZoom: 0.3, maxZoom: 1.5 }}
       >
-        <Background id="1" gap={20} color="#404040" variant={BackgroundVariant.Dots} />
+        <Background id="1" gap={20} color={colors.darkGray} variant={BackgroundVariant.Dots} />
         <Controls />
       </ReactFlow>
     </div>

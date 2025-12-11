@@ -47,8 +47,6 @@ export function useWorkflowPersistence({
         nodeType: n.data.nodeType,
         detail: n.data.detail,
         file: n.data.file,
-        fileName: n.data.fileName,
-        fileType: n.data.fileType,
         projectId: n.data.projectId,
         // Explicitly omit: onFileChange, onRemove (callbacks cannot be serialized)
       },

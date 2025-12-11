@@ -5,6 +5,7 @@ import type { XYPosition } from "@xyflow/react"
 import type { DragType } from "../nodeTemplates"
 import { nodeTemplates } from "../nodeTemplates"
 import type { TwiggleNode, UploadedFileMeta } from "../types"
+import type { CanvasAddNodeDetail } from "@/lib/canvasActions"
 
 import type { Edge } from "@xyflow/react"
 
@@ -67,7 +68,7 @@ export function useCanvasNodes({
   }, [handleFileChange])
 
   const addTwiggleNode = useCallback(
-    (dragType: DragType, position: XYPosition) => {
+    (dragType: DragType, position: XYPosition, file?: UploadedFileMeta) => {
       const template = nodeTemplates[dragType]
       if (!template) return
 
@@ -77,7 +78,7 @@ export function useCanvasNodes({
         position,
         data: {
           ...template,
-          file: null,
+          file: file || null,
           projectId: projectId,
           onFileChange: handleFileChangeRef.current || handleFileChange,
           onRemove: handleRemoveNode,

@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react"
 import { LeafletTopNav, type ViewMode } from "@/components/navigation/LeafletTopNav"
 import { NodeView } from "@/components/canvas/NodeView"
-import { FileViewerPanel } from "@/components/canvas/FileViewerPanel"
+import { ChatPanel } from "@/components/canvas/ChatPanel"
 import { ResizablePanels } from "@/components/canvas/ResizablePanels"
 import type { TwiggleNode } from "@/components/canvas/types"
 
@@ -39,7 +39,7 @@ export default function LeafletPage({
   }, [twigId])
 
   return (
-    <div className="h-screen w-screen flex flex-col">
+    <div className="h-screen flex flex-col">
       <LeafletTopNav
         projectName={projectName}
         twigId={twigId}
@@ -59,7 +59,7 @@ export default function LeafletPage({
               className="h-full"
             />
           }
-          rightPanel={<FileViewerPanel />}
+          rightPanel={<ChatPanel />}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />

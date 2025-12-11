@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { Save, Leaf, Route, FileText, Split } from "lucide-react"
+import { Save, Leaf, Route, MessageCircle, Split } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { UserProfileModal } from "@/components/auth/UserProfileModal"
 import { colors } from "@/lib/colors"
 
-export type ViewMode = "node-only" | "mixed" | "file-only"
+export type ViewMode = "node-only" | "mixed" | "chat-only"
 
 interface LeafletTopNavProps {
   projectName?: string
@@ -45,16 +45,16 @@ export function LeafletTopNav({
   return (
     <div className="h-18 text-white flex items-center justify-between px-6 relative" style={{ backgroundColor: colors.primary }}>
       <button
-          onClick={() => window.location.href = "/"}
-          className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-black">
-            <Leaf className="h-5 w-5" color="#118ab2" strokeWidth={2.5} />
-          </div>
-          <span className="font-logo text-3xl hover:underline ml-1">Twiggle</span>
-        </button>
+        onClick={() => window.location.href = "/"}
+        className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+      >
+        <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
+          <Leaf className="h-5 w-5" color="#118ab2" strokeWidth={2.5} />
+        </div>
+        <span className="font-logo text-3xl hover:underline ml-1">Twiggle</span>
+      </button>
 
-      <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
         <Link href="/dashboard" className="font-medium text-lg">
           {projectName ? `My Projects / ${projectName}` : "My Projects"}
         </Link>
@@ -74,10 +74,10 @@ export function LeafletTopNav({
       </div>
 
       <div className="flex items-center gap-2 z-10">
-        <div className="flex items-center gap-1 bg-white/20 rounded-lg p-1">
+        <div className="flex gap-1 bg-white/20 rounded-lg p-1">
           <button
             onClick={() => onViewModeChange?.("node-only")}
-            className={`p-2 rounded-md transition-colors flex items-center justify-center ${
+            className={`p-2 rounded-md transition-colors ${
               viewMode === "node-only"
                 ? "bg-white"
                 : "text-white/80 hover:text-white hover:bg-white/10"
@@ -89,7 +89,7 @@ export function LeafletTopNav({
           </button>
           <button
             onClick={() => onViewModeChange?.("mixed")}
-            className={`p-2 rounded-md transition-colors flex items-center justify-center ${
+            className={`p-2 rounded-md transition-colors ${
               viewMode === "mixed"
                 ? "bg-white"
                 : "text-white/80 hover:text-white hover:bg-white/10"
@@ -100,22 +100,22 @@ export function LeafletTopNav({
             <Split className="h-5 w-5" />
           </button>
           <button
-            onClick={() => onViewModeChange?.("file-only")}
-            className={`p-2 rounded-md transition-colors flex items-center justify-center ${
-              viewMode === "file-only"
+            onClick={() => onViewModeChange?.("chat-only")}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === "chat-only"
                 ? "bg-white"
                 : "text-white/80 hover:text-white hover:bg-white/10"
             }`}
-            style={viewMode === "file-only" ? { color: colors.primary } : undefined}
-            title="File only view"
+            style={viewMode === "chat-only" ? { color: colors.primary } : undefined}
+            title="Chat only view"
           >
-            <FileText className="h-5 w-5" />
+            <MessageCircle className="h-5 w-5" />
           </button>
         </div>
 
         <button
           onClick={() => setShowUserModal(true)}
-          className="h-10 w-10 ml-4 bg-white rounded-full flex items-center justify-center text-black overflow-hidden hover:opacity-90 transition-opacity"
+          className="h-10 w-10 ml-4 bg-white rounded-full flex items-center justify-center overflow-hidden hover:opacity-90 transition-opacity"
           title={session?.user?.email || "User"}
         >
           {session?.user?.profilePictureUrl ? (

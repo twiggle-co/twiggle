@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react"
 
 const DIVIDER_WIDTH = "12px"
 
-type ViewMode = "node-only" | "mixed" | "file-only"
+type ViewMode = "node-only" | "mixed" | "chat-only"
 
 interface ResizablePanelsProps {
   leftPanel: React.ReactNode
@@ -22,14 +22,14 @@ export function ResizablePanels({
   viewMode,
   onViewModeChange,
   orientation = "vertical",
-  snapThreshold = 10,
+  snapThreshold = 15,
   animationDuration = 300,
 }: ResizablePanelsProps) {
   const getTargetWidth = (mode: ViewMode): number => {
     switch (mode) {
       case "node-only":
         return 100
-      case "file-only":
+      case "chat-only":
         return 0
       case "mixed":
         return 66.67
@@ -181,7 +181,7 @@ export function ResizablePanels({
         const finalLeftWidth = currentLeftWidthRef.current
 
         if (finalLeftWidth <= snapThreshold) {
-          onViewModeChange("file-only")
+          onViewModeChange("chat-only")
         } else if (finalLeftWidth >= 100 - snapThreshold) {
           onViewModeChange("node-only")
         } else {
@@ -225,7 +225,7 @@ export function ResizablePanels({
     >
       {/* Left Panel (Node View) */}
       <div
-        className="flex-shrink-0 overflow-hidden transition-none"
+        className="flex-shrink-0 overflow-hidden"
         style={{
           width: orientation === "vertical" ? `${leftWidth}%` : "100%",
           height: orientation === "horizontal" ? `${leftWidth}%` : "100%",
@@ -239,7 +239,7 @@ export function ResizablePanels({
 
       {isDividerVisible && (
         <div
-          className="select-none relative flex items-center justify-center flex-shrink-0 group"
+          className="select-none relative flex items-center justify-center flex-shrink-0"
           style={{
             width: orientation === "vertical" ? DIVIDER_WIDTH : "100%",
             height: orientation === "vertical" ? "100%" : DIVIDER_WIDTH,
@@ -255,8 +255,8 @@ export function ResizablePanels({
             style={{
               width: orientation === "vertical" ? "1px" : "100%",
               height: orientation === "vertical" ? "100%" : "1px",
-              left: orientation === "vertical" ? "0" : "0",
-              top: orientation === "vertical" ? "0" : "0",
+              left: 0,
+              top: 0,
               backgroundColor: "#D6D6D6",
             }}
           />
@@ -265,8 +265,8 @@ export function ResizablePanels({
             style={{
               width: orientation === "vertical" ? "1px" : "100%",
               height: orientation === "vertical" ? "100%" : "1px",
-              right: orientation === "vertical" ? "0" : "0",
-              bottom: orientation === "vertical" ? "0" : "0",
+              right: 0,
+              bottom: 0,
               backgroundColor: "#D6D6D6",
             }}
           />
@@ -285,7 +285,7 @@ export function ResizablePanels({
       )}
 
       <div
-        className="flex-shrink-0 overflow-hidden transition-none"
+        className="flex-shrink-0 overflow-hidden"
         style={{
           width: orientation === "vertical" ? `${100 - leftWidth}%` : "100%",
           height: orientation === "horizontal" ? `${100 - leftWidth}%` : "100%",

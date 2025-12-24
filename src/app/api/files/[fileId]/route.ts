@@ -11,43 +11,49 @@ export async function GET(
     const { fileId } = await params
 
     if (!fileId) {
-      return NextResponse.json(
-        { error: "File ID is required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "File ID is required" }, { status: 400 })
     }
 
     const storage = getStorageInstance()
     const bucket = storage.bucket(BUCKET_NAME)
-    const [files] = await bucket.getFiles({ prefix: fileId })
+    const fileRecord = await prisma.file.findUnique({ where: { fileId } })
 
-    if (files.length === 0) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 })
+    let file = null as unknown as ReturnType<typeof bucket.file>
+
+    if (fileRecord?.storageUrl) {
+      const objectName = extractFileNameFromUrl(fileRecord.storageUrl)
+      file = bucket.file(objectName)
+    } else {
+      const [files] = await bucket.getFiles({ prefix: fileId })
+      if (files.length === 0) {
+        return NextResponse.json({ error: "File not found" }, { status: 404 })
+      }
+      file = files[0]
     }
 
-    const file = files[0]
     const [exists] = await file.exists()
-
     if (!exists) {
       return NextResponse.json({ error: "File not found" }, { status: 404 })
     }
 
-    const [metadata, buffer] = await Promise.all([
-      file.getMetadata(),
-      file.download(),
-    ])
+    const [metadata, buffer] = await Promise.all([file.getMetadata(), file.download()])
 
     const originalName = metadata[0].metadata?.originalName || fileId
-    const contentType =
-      metadata[0].contentType || "application/octet-stream"
+    const contentType = metadata[0].contentType || "application/octet-stream"
 
     return new NextResponse(new Uint8Array(buffer[0]), {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${originalName}"`,
-        "Cache-Control": "public, max-age=3600",
+        
+        // IMPORTANT: don't cache previews, otherwise you'll keep seeing the first version
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+        Vary: "Authorization",
       },
     })
+    
   } catch (error) {
     return handleApiError(error, "Failed to retrieve file")
   }
@@ -62,10 +68,7 @@ export async function DELETE(
     const { fileId } = await params
 
     if (!fileId) {
-      return NextResponse.json(
-        { error: "File ID is required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "File ID is required" }, { status: 400 })
     }
 
     const fileRecord = await prisma.file.findUnique({
@@ -77,35 +80,32 @@ export async function DELETE(
         const storage = getStorageInstance()
         const bucket = storage.bucket(BUCKET_NAME)
         const [files] = await bucket.getFiles({ prefix: fileId })
-        
+
         if (files.length > 0) {
           await Promise.all(files.map((file) => file.delete()))
         }
       } catch {
         // Ignore GCS errors during cleanup
       }
-      
-      return NextResponse.json({ 
-        success: true, 
-        message: "File not found in database (may have already been deleted)" 
+
+      return NextResponse.json({
+        success: true,
+        message: "File not found in database (may have already been deleted)",
       })
     }
 
     if (fileRecord.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
     try {
       if (fileRecord.storageUrl) {
         const storage = getStorageInstance()
         const bucket = storage.bucket(BUCKET_NAME)
-        
+
         const fileName = extractFileNameFromUrl(fileRecord.storageUrl)
         const file = bucket.file(fileName)
-        
+
         const [exists] = await file.exists()
         if (exists) {
           await file.delete()
@@ -114,7 +114,7 @@ export async function DELETE(
         const storage = getStorageInstance()
         const bucket = storage.bucket(BUCKET_NAME)
         const [files] = await bucket.getFiles({ prefix: fileId })
-        
+
         if (files.length > 0) {
           await Promise.all(files.map((file) => file.delete()))
         }

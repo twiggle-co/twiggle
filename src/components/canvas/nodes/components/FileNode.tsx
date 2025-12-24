@@ -1,13 +1,15 @@
 "use client"
 
-import { 
-  FileText, 
-  File, 
-  Image as ImageIcon, 
+import {
+  FileText,
+  File,
+  Image as ImageIcon,
   FileSpreadsheet,
   Presentation,
   Eye,
-  X
+  X,
+  RefreshCcw,
+  ExternalLink,
 } from "lucide-react"
 import { colors } from "@/lib/colors"
 import type { UploadedFileMeta } from "../../types"
@@ -19,6 +21,11 @@ interface FileNodeProps {
   isDragging?: boolean
   onRemove?: () => void
   onPreview?: () => void
+
+  // Sync + open source
+  onSync?: () => void
+  isSyncing?: boolean
+  onOpenSource?: () => void
 }
 
 function formatFileSize(bytes: number): string {
@@ -34,19 +41,14 @@ function getFileExtension(filename: string): string {
 
 function getFileIcon(extension: string) {
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    // PDF
     pdf: FileText,
-    // Documents
     doc: FileText,
     docx: FileText,
-    // Excel/Sheets
     xls: FileSpreadsheet,
     xlsx: FileSpreadsheet,
     csv: FileSpreadsheet,
-    // PowerPoint
     ppt: Presentation,
     pptx: Presentation,
-    // Images
     jpg: ImageIcon,
     jpeg: ImageIcon,
     png: ImageIcon,
@@ -81,19 +83,33 @@ function getFileIconColor(extension: string): string {
   return colorMap[extension] || colors.darkGray
 }
 
-export function FileNode({ file, showOutline = false, showActionButtons = false, isDragging = false, onRemove, onPreview }: FileNodeProps) {
+export function FileNode({
+  file,
+  showOutline = false,
+  showActionButtons = false,
+  isDragging = false,
+  onRemove,
+  onPreview,
+  onSync,
+  isSyncing = false,
+  onOpenSource,
+}: FileNodeProps) {
   const extension = getFileExtension(file.name)
   const IconComponent = getFileIcon(extension)
   const iconColor = getFileIconColor(extension)
   const fileSize = formatFileSize(file.size)
 
+  const canSync = Boolean(file.fileId) && file.sourceType === "google-drive"
+  const hasSourceUrl = Boolean(file.sourceUrl)
+
   return (
-    <div className={`flex flex-col items-center justify-center p-4 relative ${
-      isDragging ? "cursor-grabbing" : "cursor-pointer"
-    }`}>
-      {/* Action buttons - shown on left click */}
+    <div
+      className={`flex flex-col items-center justify-center p-4 relative ${
+        isDragging ? "cursor-grabbing" : "cursor-pointer"
+      }`}
+    >
       {showActionButtons && (
-        <div className="absolute -top-20 flex flex-col gap-2 z-10">
+        <div className="absolute -top-28 flex flex-col gap-2 z-10">
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -104,6 +120,34 @@ export function FileNode({ file, showOutline = false, showActionButtons = false,
             <Eye className="h-3.5 w-3.5" />
             Preview
           </button>
+
+          {hasSourceUrl && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenSource?.()
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-md border border-gray-200 hover:bg-gray-50 transition-colors text-xs font-medium text-gray-700"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open
+            </button>
+          )}
+
+          {canSync && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onSync?.()
+              }}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-md border border-gray-200 hover:bg-gray-50 transition-colors text-xs font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCcw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Syncing..." : "Sync"}
+            </button>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -129,31 +173,30 @@ export function FileNode({ file, showOutline = false, showActionButtons = false,
         </div>
       )}
 
-      {/* File Icon on rounded square background */}
-      <div 
+      <div
         className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mb-2 shadow-sm transition-all"
-        style={{
-          ...(showOutline ? {
-            outline: `2px solid ${colors.primary}`,
-            outlineOffset: "2px",
-          } : {})
-        }}
+        style={
+          showOutline
+            ? {
+                outline: `2px solid ${colors.primary}`,
+                outlineOffset: "2px",
+              }
+            : {}
+        }
       >
         <span style={{ color: iconColor }}>
           <IconComponent className="h-10 w-10" />
         </span>
       </div>
 
-      {/* Filename */}
-      <div className="text-sm font-medium text-gray-700 mb-1 text-center max-w-[180px] truncate" title={file.name}>
+      <div
+        className="text-sm font-medium text-gray-700 mb-1 text-center max-w-[180px] truncate"
+        title={file.name}
+      >
         {file.name}
       </div>
 
-      {/* File size */}
-      <div className="text-xs text-gray-500">
-        {fileSize}
-      </div>
+      <div className="text-xs text-gray-500">{fileSize}</div>
     </div>
   )
 }
-

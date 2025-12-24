@@ -10,6 +10,16 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Needed for importing + syncing Google Docs/Sheets/Slides via Drive export.
+      authorization: {
+        params: {
+          scope:
+            "openid email profile https://www.googleapis.com/auth/drive.readonly",
+          access_type: "offline",
+          prompt: "consent",
+          response_type: "code",
+        },
+      },
     }),
   ],
   pages: {
@@ -17,14 +27,15 @@ export const authOptions = {
   },
   callbacks: {
     async session({ session, user }: { session: Session; user: User }) {
-      if (session.user && user && typeof user.id === 'string') {
+      if (session.user && user && typeof user.id === "string") {
         session.user.id = user.id
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { profilePictureUrl: true },
         })
         if (dbUser?.profilePictureUrl) {
-          (session.user as { id?: string; profilePictureUrl?: string }).profilePictureUrl = dbUser.profilePictureUrl
+          ;(session.user as { id?: string; profilePictureUrl?: string }).profilePictureUrl =
+            dbUser.profilePictureUrl
         }
       }
       return session

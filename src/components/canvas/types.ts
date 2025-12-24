@@ -10,6 +10,12 @@ export type UploadedFileMeta = {
   content?: string
   storageUrl?: string // URL to file in Google Cloud Storage
   fileId?: string // Unique identifier for the file in storage
+
+  // URL imports (Google Docs / Sheets / Slides / Drive)
+  sourceType?: "google-drive" | "url"
+  sourceUrl?: string
+  sourceDocId?: string
+  sourceKind?: "document" | "spreadsheet" | "presentation" | "file"
 }
 
 export type TwiggleNodeData = {
@@ -24,4 +30,3 @@ export type TwiggleNodeData = {
 }
 
 export type TwiggleNode = Node<TwiggleNodeData, "twiggleNode">
-

@@ -3,16 +3,17 @@
 import { useState, useEffect, useRef } from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 
-import type { TwiggleNode } from "../types"
+import type { TwiggleNode, UploadedFileMeta } from "../types"
 import { FileNode } from "./components/FileNode"
 
-export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) {
+export function TwiggleNodeCard({ id, data }: NodeProps<TwiggleNode>) {
   const nodeType = data.nodeType || (id.split("-").slice(0, -1).join("-") as typeof data.nodeType)
 
   const [showOutline, setShowOutline] = useState(false)
   const [showActionButtons, setShowActionButtons] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  
+  const [isSyncing, setIsSyncing] = useState(false)
+
   const nodeRef = useRef<HTMLDivElement>(null)
   const dragStartPos = useRef<{ x: number; y: number } | null>(null)
 
@@ -27,14 +28,11 @@ export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) 
       })
 
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         throw new Error(error.error || "Failed to delete file")
       }
 
-      // Remove the node from canvas
-      if (data.onRemove) {
-        data.onRemove(id)
-      }
+      data.onRemove?.(id)
     } catch (error) {
       console.error("Error deleting file:", error)
       alert(error instanceof Error ? error.message : "Failed to delete file")
@@ -43,25 +41,67 @@ export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) 
 
   const handleFilePreview = () => {
     if (fileInfo?.fileId) {
-      window.open(`/api/files/${fileInfo.fileId}`, "_blank")
+      // Cache-bust so browser/pdf viewer doesn't reuse the first response
+      window.open(`/api/files/${fileInfo.fileId}?v=${Date.now()}`, "_blank")
+    }
+  }
+  
+
+  const handleOpenSource = () => {
+    if (fileInfo?.sourceUrl) {
+      window.open(fileInfo.sourceUrl, "_blank")
+    }
+  }
+
+  const handleFileSync = async () => {
+    if (!fileInfo?.fileId || isSyncing) return
+    setIsSyncing(true)
+
+    try {
+      const response = await fetch(`/api/files/${fileInfo.fileId}/sync`, {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error || error.message || "Failed to sync file")
+      }
+
+      const result = await response.json()
+
+      const updatedMeta: UploadedFileMeta = {
+        ...fileInfo,
+        name: result.fileName ?? fileInfo.name,
+        size: result.size ?? fileInfo.size,
+        type: result.type ?? fileInfo.type,
+        storageUrl: result.storageUrl ?? fileInfo.storageUrl,
+        fileId: result.fileId ?? fileInfo.fileId,
+        sourceType: result.sourceType ?? fileInfo.sourceType,
+        sourceUrl: result.sourceUrl ?? fileInfo.sourceUrl,
+        sourceDocId: result.sourceDocId ?? fileInfo.sourceDocId,
+        sourceKind: result.sourceKind ?? fileInfo.sourceKind,
+      }
+
+      data.onFileChange?.(id, updatedMeta)
+    } catch (error) {
+      console.error("Sync error:", error)
+      alert(error instanceof Error ? error.message : "Failed to sync file")
+    } finally {
+      setIsSyncing(false)
     }
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Only track left mouse button for dragging
     if (e.button === 0) {
       dragStartPos.current = { x: e.clientX, y: e.clientY }
-      
+
       const handleMouseMove = (moveEvent: MouseEvent) => {
         if (dragStartPos.current) {
           const distance = Math.sqrt(
-            Math.pow(moveEvent.clientX - dragStartPos.current.x, 2) + 
-            Math.pow(moveEvent.clientY - dragStartPos.current.y, 2)
+            Math.pow(moveEvent.clientX - dragStartPos.current.x, 2) +
+              Math.pow(moveEvent.clientY - dragStartPos.current.y, 2)
           )
-          // If moved more than 5px, consider it dragging
-          if (distance > 5) {
-            setIsDragging(true)
-          }
+          if (distance > 5) setIsDragging(true)
         }
       }
 
@@ -78,10 +118,8 @@ export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) 
   }
 
   const handleClick = (e: React.MouseEvent) => {
-    // Don't show outline if it was a drag
     if (!isDragging) {
       e.stopPropagation()
-      // Left click - show outline and action buttons
       setShowOutline(true)
       setShowActionButtons(true)
     }
@@ -92,7 +130,6 @@ export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) 
     e.stopPropagation()
   }
 
-  // Hide outline and buttons when clicking outside the node
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (nodeRef.current && !nodeRef.current.contains(event.target as HTMLElement)) {
@@ -101,14 +138,10 @@ export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) 
       }
     }
 
-    // Use click event to match the onClick behavior
     document.addEventListener("click", handleClickOutside)
-    return () => {
-      document.removeEventListener("click", handleClickOutside)
-    }
+    return () => document.removeEventListener("click", handleClickOutside)
   }, [])
 
-  // Only render file-uploaded nodes
   if (!(data.kind === "file" && nodeType === "file-uploaded" && fileInfo)) {
     return null
   }
@@ -122,13 +155,16 @@ export function TwiggleNodeCard({ id, data, selected }: NodeProps<TwiggleNode>) 
       className="hover:cursor-pointer"
     >
       <Handle type="target" position={Position.Left} />
-      <FileNode 
-        file={fileInfo} 
+      <FileNode
+        file={fileInfo}
         showOutline={showOutline}
         showActionButtons={showActionButtons}
         isDragging={isDragging}
         onRemove={handleFileRemove}
         onPreview={handleFilePreview}
+        onOpenSource={handleOpenSource}
+        onSync={handleFileSync}
+        isSyncing={isSyncing}
       />
       <Handle type="source" position={Position.Right} />
     </div>
